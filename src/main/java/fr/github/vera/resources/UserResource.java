@@ -29,57 +29,75 @@ public class UserResource {
             summary = "Récupérer tous les utilisateurs",
             description = "Retourne la liste de tous les utilisateurs",
             security = @SecurityRequirement(name = "BearerAuth"))
-    @ApiResponses({
-            @ApiResponse(
-                    responseCode = "200",
-                    description = "Users retrieved successfully",
-                    content = @Content(schema = @Schema(implementation = User[].class))
-            )
-    })
+    @ApiResponse(
+            responseCode = "200",
+            description = "Users retrieved successfully",
+            content = @Content(schema = @Schema(implementation = ResponseApi.class))
+    )
     public Response getAllUsers(@QueryParam("limit") @DefaultValue("100") int limit,
                                 @QueryParam("offset") @DefaultValue("0") int offset) {
         try {
             Collection<User> allUsers = userService.getAllUsers();
-            Map<String, Object> response = getStringObjectMap(limit, offset, allUsers);
+            List<User> users = new ArrayList<>(allUsers);
 
+            // Pagination
+            int start = Math.min(offset, users.size());
+            int end = Math.min(start + limit, users.size());
+            List<User> paginatedUsers = users.subList(start, end);
+
+            // Metadata pour la pagination
+            Map<String, Object> meta = new HashMap<>();
+            meta.put("total", users.size());
+            meta.put("offset", offset);
+            meta.put("limit", limit);
+            meta.put("returned", paginatedUsers.size());
+
+            ResponseApi<List<User>> response = new ResponseApi<>(paginatedUsers, meta);
             return Response.ok(response).build();
         } catch (Exception e) {
+            ResponseApi<String> errorResponse = new ResponseApi<>("Failed to retrieve users");
             return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
-                    .entity(Map.of("error", "Failed to retrieve users", "message", e.getMessage()))
+                    .entity(errorResponse)
                     .build();
         }
-    }
-
-    private static Map<String, Object> getStringObjectMap(int limit, int offset, Collection<User> allUsers) {
-        List<User> users = new ArrayList<>(allUsers);
-
-        // Pagination
-        int start = Math.min(offset, users.size());
-        int end = Math.min(start + limit, users.size());
-        List<User> paginatedUsers = users.subList(start, end);
-
-        Map<String, Object> response = new HashMap<>();
-        response.put("users", paginatedUsers);
-        response.put("total", users.size());
-        response.put("offset", offset);
-        response.put("limit", limit);
-        return response;
     }
 
     @GET
     @Path("/{id}")
+    @Operation(
+            summary = "Récupérer un utilisateur par ID",
+            description = "Retourne un utilisateur spécifique par son ID"
+    )
+    @ApiResponses({
+            @ApiResponse(
+                    responseCode = "200",
+                    description = "User found",
+                    content = @Content(schema = @Schema(implementation = ResponseApi.class))
+            ),
+            @ApiResponse(
+                    responseCode = "404",
+                    description = "User not found",
+                    content = @Content(schema = @Schema(implementation = ResponseApi.class))
+            )
+    })
     public Response getUserById(@PathParam("id") Integer id) {
         if (id == null || id <= 0) {
+            ResponseApi<String> errorResponse = new ResponseApi<>("Invalid user ID");
             return Response.status(Response.Status.BAD_REQUEST)
-                    .entity(Map.of("error", "Invalid user ID"))
+                    .entity(errorResponse)
                     .build();
         }
 
         Optional<User> user = userService.getUserById(id);
-        return user.map(u -> Response.ok(u).build())
-                .orElse(Response.status(Response.Status.NOT_FOUND)
-                        .entity(Map.of("error", "User not found"))
-                        .build());
+        if (user.isPresent()) {
+            ResponseApi<User> response = new ResponseApi<>(user.get());
+            return Response.ok(response).build();
+        } else {
+            ResponseApi<String> errorResponse = new ResponseApi<>("User not found");
+            return Response.status(Response.Status.NOT_FOUND)
+                    .entity(errorResponse)
+                    .build();
+        }
     }
 
     @POST
@@ -90,54 +108,103 @@ public class UserResource {
     )
     @ApiResponses({
             @ApiResponse(
-                    responseCode = "200",
-                    description = "Users retrieved successfully",
-                    content = @Content(schema = @Schema(implementation = User[].class))
+                    responseCode = "201",
+                    description = "User created successfully",
+                    content = @Content(schema = @Schema(implementation = ResponseApi.class))
+            ),
+            @ApiResponse(
+                    responseCode = "400",
+                    description = "Invalid user data",
+                    content = @Content(schema = @Schema(implementation = ResponseApi.class))
             )
     })
     public Response createUser(@Valid User user) {
         try {
             User createdUser = userService.createUser(user);
+            ResponseApi<User> response = new ResponseApi<>(createdUser);
             return Response.status(Response.Status.CREATED)
-                    .entity(createdUser)
+                    .entity(response)
                     .location(URI.create("/users/" + createdUser.getId()))
                     .build();
         } catch (Exception e) {
+            ResponseApi<String> errorResponse = new ResponseApi<>("Failed to create user: " + e.getMessage());
             return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
-                    .entity(Map.of("error", "Failed to create user", "message", e.getMessage()))
+                    .entity(errorResponse)
                     .build();
         }
     }
 
     @PUT
     @Path("/{id}")
+    @Operation(
+            summary = "Mettre à jour un utilisateur",
+            description = "Met à jour un utilisateur existant"
+    )
+    @ApiResponses({
+            @ApiResponse(
+                    responseCode = "200",
+                    description = "User updated successfully",
+                    content = @Content(schema = @Schema(implementation = ResponseApi.class))
+            ),
+            @ApiResponse(
+                    responseCode = "404",
+                    description = "User not found",
+                    content = @Content(schema = @Schema(implementation = ResponseApi.class))
+            )
+    })
     public Response updateUser(@PathParam("id") Integer id, @Valid User user) {
         if (id == null || id <= 0) {
+            ResponseApi<String> errorResponse = new ResponseApi<>("Invalid user ID");
             return Response.status(Response.Status.BAD_REQUEST)
-                    .entity(Map.of("error", "Invalid user ID"))
+                    .entity(errorResponse)
                     .build();
         }
 
         Optional<User> updatedUser = userService.updateUser(id, user);
-        return updatedUser.map(u -> Response.ok(u).build())
-                .orElse(Response.status(Response.Status.NOT_FOUND)
-                        .entity(Map.of("error", "User not found"))
-                        .build());
+        if (updatedUser.isPresent()) {
+            ResponseApi<User> response = new ResponseApi<>(updatedUser.get());
+            return Response.ok(response).build();
+        } else {
+            ResponseApi<String> errorResponse = new ResponseApi<>("User not found");
+            return Response.status(Response.Status.NOT_FOUND)
+                    .entity(errorResponse)
+                    .build();
+        }
     }
 
     @DELETE
     @Path("/{id}")
+    @Operation(
+            summary = "Supprimer un utilisateur",
+            description = "Supprime un utilisateur par son ID"
+    )
+    @ApiResponses({
+            @ApiResponse(
+                    responseCode = "204",
+                    description = "User deleted successfully"
+            ),
+            @ApiResponse(
+                    responseCode = "404",
+                    description = "User not found",
+                    content = @Content(schema = @Schema(implementation = ResponseApi.class))
+            )
+    })
     public Response deleteUser(@PathParam("id") Integer id) {
         if (id == null || id <= 0) {
+            ResponseApi<String> errorResponse = new ResponseApi<>("Invalid user ID");
             return Response.status(Response.Status.BAD_REQUEST)
-                    .entity(Map.of("error", "Invalid user ID"))
+                    .entity(errorResponse)
                     .build();
         }
 
         boolean deleted = userService.deleteUser(id);
-        return deleted ? Response.noContent().build()
-                : Response.status(Response.Status.NOT_FOUND)
-                .entity(Map.of("error", "User not found"))
-                .build();
+        if (deleted) {
+            return Response.noContent().build();
+        } else {
+            ResponseApi<String> errorResponse = new ResponseApi<>("User not found");
+            return Response.status(Response.Status.NOT_FOUND)
+                    .entity(errorResponse)
+                    .build();
+        }
     }
 }

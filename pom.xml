@@ -15,10 +15,11 @@
         <jersey.version>4.0.0-M4</jersey.version>
         <log4j.version>2.23.1</log4j.version>
         <metric.version>4.2.37</metric.version>
+        <swagger.version>2.2.37</swagger.version>
+        <servlet.version>6.1.0</servlet.version>
     </properties>
 
     <dependencies>
-
         <!-- JERSEY -->
         <dependency>
             <groupId>org.glassfish.jersey.core</groupId>
@@ -46,6 +47,70 @@
             <version>${jersey.version}</version>
         </dependency>
 
+        <!-- API Servlet Jakarta (NÉCESSAIRE pour Jersey) -->
+        <dependency>
+            <groupId>jakarta.servlet</groupId>
+            <artifactId>jakarta.servlet-api</artifactId>
+            <version>${servlet.version}</version>
+        </dependency>
+
+        <!-- Swagger/OpenAPI - EXCLUSIONS IMPORTANTES pour éviter conflits javax/jakarta -->
+        <dependency>
+            <groupId>io.swagger.core.v3</groupId>
+            <artifactId>swagger-core-jakarta</artifactId>
+            <version>${swagger.version}</version>
+            <exclusions>
+                <!-- Exclure les versions javax pour éviter les conflits -->
+                <exclusion>
+                    <groupId>io.swagger.core.v3</groupId>
+                    <artifactId>swagger-core</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>io.swagger.core.v3</groupId>
+                    <artifactId>swagger-models</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>io.swagger.core.v3</groupId>
+                    <artifactId>swagger-annotations</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+
+        <dependency>
+            <groupId>io.swagger.core.v3</groupId>
+            <artifactId>swagger-jaxrs2-jakarta</artifactId>
+            <version>${swagger.version}</version>
+            <exclusions>
+                <!-- Exclure TOUTES les versions javax -->
+                <exclusion>
+                    <groupId>io.swagger.core.v3</groupId>
+                    <artifactId>swagger-jaxrs2</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>io.swagger.core.v3</groupId>
+                    <artifactId>swagger-core</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>io.swagger.core.v3</groupId>
+                    <artifactId>swagger-annotations</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>io.swagger.core.v3</groupId>
+                    <artifactId>swagger-models</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>io.swagger.core.v3</groupId>
+                    <artifactId>swagger-integration</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+
+        <dependency>
+            <groupId>io.swagger.core.v3</groupId>
+            <artifactId>swagger-annotations-jakarta</artifactId>
+            <version>${swagger.version}</version>
+        </dependency>
+
         <!-- Metrics -->
         <dependency>
             <groupId>io.dropwizard.metrics</groupId>
@@ -64,6 +129,13 @@
             <artifactId>log4j-core</artifactId>
             <version>${log4j.version}</version>
         </dependency>
+
+        <!-- SLF4J Bridge pour Swagger (il utilise SLF4J) -->
+        <dependency>
+            <groupId>org.apache.logging.log4j</groupId>
+            <artifactId>log4j-slf4j2-impl</artifactId>
+            <version>${log4j.version}</version>
+        </dependency>
     </dependencies>
 
     <build>
@@ -72,6 +144,7 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-assembly-plugin</artifactId>
+                <version>3.4.2</version>
                 <configuration>
                     <!-- get all project dependencies -->
                     <descriptorRefs>
@@ -95,7 +168,17 @@
                     </execution>
                 </executions>
             </plugin>
+
+            <!-- Plugin Maven Compiler avec version -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <version>3.11.0</version>
+                <configuration>
+                    <source>24</source>
+                    <target>24</target>
+                </configuration>
+            </plugin>
         </plugins>
     </build>
-
 </project>

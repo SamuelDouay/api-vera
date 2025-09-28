@@ -1,5 +1,11 @@
-package fr.github.vera;
+package fr.github.vera.resources;
 
+import fr.github.vera.model.User;
+import fr.github.vera.services.UserService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.MediaType;
@@ -11,10 +17,17 @@ import java.util.*;
 @Path("/users")
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)
+@Tag(name = "Users", description = "Gestion des utilisateurs")
 public class UserResource {
     private final UserService userService = new UserService();
 
     @GET
+    @Operation(
+            summary = "Récupérer tous les utilisateurs",
+            description = "Retourne la liste de tous les utilisateurs",
+            security = @SecurityRequirement(name = "BearerAuth")
+    )
+    @ApiResponse(responseCode = "200", description = "Liste des utilisateurs récupérée avec succès")
     public Response getAllUsers(@QueryParam("limit") @DefaultValue("100") int limit,
                                 @QueryParam("offset") @DefaultValue("0") int offset) {
         try {
@@ -62,6 +75,13 @@ public class UserResource {
     }
 
     @POST
+    @Operation(
+            summary = "Créer un nouvel utilisateur",
+            description = "Crée un nouvel utilisateur avec les données fournies",
+            security = @SecurityRequirement(name = "BasicAuth")
+    )
+    @ApiResponse(responseCode = "201", description = "Utilisateur créé avec succès")
+    @ApiResponse(responseCode = "400", description = "Données invalides")
     public Response createUser(@Valid User user) {
         try {
             User createdUser = userService.createUser(user);

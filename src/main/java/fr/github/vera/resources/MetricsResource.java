@@ -1,6 +1,7 @@
-package fr.github.vera;
+package fr.github.vera.resources;
 
 import com.codahale.metrics.MetricRegistry;
+import fr.github.vera.services.UserService;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.Produces;

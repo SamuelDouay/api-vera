@@ -1,8 +1,9 @@
-package fr.github.vera;
+package fr.github.vera.services;
 
 import com.codahale.metrics.Counter;
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Timer;
+import fr.github.vera.model.User;
 
 import java.util.ArrayList;
 import java.util.Collection;

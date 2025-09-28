@@ -1,4 +1,4 @@
-package fr.github.vera;
+package fr.github.vera.exception;
 
 import jakarta.validation.ValidationException;
 import jakarta.ws.rs.core.Response;

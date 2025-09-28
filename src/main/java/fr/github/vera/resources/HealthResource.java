@@ -1,5 +1,8 @@
-package fr.github.vera;
+package fr.github.vera.resources;
 
+import fr.github.vera.services.UserService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.Produces;
@@ -12,10 +15,12 @@ import java.util.Map;
 
 @Path("/health")
 @Produces(MediaType.APPLICATION_JSON)
+@Tag(name = "Health", description = "Endpoints de santé de l'application")
 public class HealthResource {
     private final UserService userService = new UserService();
 
     @GET
+    @Operation(summary = "Vérifier l'état de santé de l'application")
     public Response healthCheck() {
         Map<String, Object> health = new HashMap<>();
         health.put("status", "UP");

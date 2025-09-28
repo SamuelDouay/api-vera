@@ -1,4 +1,4 @@
-package fr.github.vera;
+package fr.github.vera.model;
 
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.Min;

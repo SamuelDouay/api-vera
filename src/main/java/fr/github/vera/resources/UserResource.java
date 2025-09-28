@@ -3,7 +3,10 @@ package fr.github.vera.resources;
 import fr.github.vera.model.User;
 import fr.github.vera.services.UserService;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
@@ -25,9 +28,14 @@ public class UserResource {
     @Operation(
             summary = "Récupérer tous les utilisateurs",
             description = "Retourne la liste de tous les utilisateurs",
-            security = @SecurityRequirement(name = "BearerAuth")
-    )
-    @ApiResponse(responseCode = "200", description = "Liste des utilisateurs récupérée avec succès")
+            security = @SecurityRequirement(name = "BearerAuth"))
+    @ApiResponses({
+            @ApiResponse(
+                    responseCode = "200",
+                    description = "Users retrieved successfully",
+                    content = @Content(schema = @Schema(implementation = User[].class))
+            )
+    })
     public Response getAllUsers(@QueryParam("limit") @DefaultValue("100") int limit,
                                 @QueryParam("offset") @DefaultValue("0") int offset) {
         try {
@@ -80,8 +88,13 @@ public class UserResource {
             description = "Crée un nouvel utilisateur avec les données fournies",
             security = @SecurityRequirement(name = "BasicAuth")
     )
-    @ApiResponse(responseCode = "201", description = "Utilisateur créé avec succès")
-    @ApiResponse(responseCode = "400", description = "Données invalides")
+    @ApiResponses({
+            @ApiResponse(
+                    responseCode = "200",
+                    description = "Users retrieved successfully",
+                    content = @Content(schema = @Schema(implementation = User[].class))
+            )
+    })
     public Response createUser(@Valid User user) {
         try {
             User createdUser = userService.createUser(user);

@@ -6,6 +6,10 @@ import fr.github.vera.config.ConfigProperties;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import java.io.FileNotFoundException;
+import java.net.URL;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.sql.Connection;
 import java.sql.SQLException;
 
@@ -33,6 +37,7 @@ public class DatabaseManager {
                 loadPostgreSQLDriver();
                 this.dataSource = createDataSource();
                 testConnection();
+                initializeDatabaseSchema();
                 registerShutdownHook();
                 this.initialized = true;
                 logger.debug("DatabaseManager initialisé avec succès");
@@ -178,5 +183,78 @@ public class DatabaseManager {
             logger.debug("Shutdown hook - Fermeture du DatabaseManager PostgreSQL");
             shutdown();
         }));
+    }
+
+    private void initializeDatabaseSchema() {
+        try {
+            // Vérifier si les tables existent déjà
+            if (!isDatabaseInitialized()) {
+                logger.info("Initialisation du schéma de base de données...");
+                executeSqlScript("/database/init-db.sql");
+                logger.info("Schéma de base de données initialisé avec succès");
+            } else {
+                logger.debug("Base de données déjà initialisée");
+            }
+        } catch (Exception e) {
+            throw new RuntimeException("Erreur lors de l'initialisation du schéma", e);
+        }
+    }
+
+    public <T> T executeWithConnection(DatabaseAction<T> action, String context) {
+        try (Connection conn = getConnection()) {
+            return action.execute(conn);
+        }  catch (Exception e) {
+            throw new RuntimeException("Erreur inattendue lors de " + context, e);
+        }
+    }
+
+    @FunctionalInterface
+    public interface DatabaseAction<T> {
+        T execute(Connection connection) throws SQLException;
+    }
+
+    private boolean isDatabaseInitialized() {
+        String checkTableSql = "SELECT EXISTS (SELECT FROM information_schema.tables WHERE table_name = 'users')";
+
+        return executeWithConnection(connection -> {
+            try (var statement = connection.createStatement();
+                 var resultSet = statement.executeQuery(checkTableSql)) {
+                return resultSet.next() && resultSet.getBoolean(1);
+            }
+        }, "vérification initialisation BDD");
+    }
+
+    private void executeSqlScript(String scriptPath) {
+        executeWithConnection(connection -> {
+            try {
+                String script = loadScriptFromResources(scriptPath);
+                String[] sqlCommands = script.split(";");
+
+                for (String sqlCommand : sqlCommands) {
+                    String trimmedSql = sqlCommand.trim();
+                    if (!trimmedSql.isEmpty()) {
+                        try (var statement = connection.createStatement()) {
+                            statement.execute(trimmedSql);
+                            logger.debug("SQL exécuté: {}", trimmedSql);
+                        }
+                    }
+                }
+                return null;
+            } catch (Exception e) {
+                throw new SQLException("Erreur lors de l'exécution du script SQL", e);
+            }
+        }, "exécution script d'initialisation");
+    }
+
+    private String loadScriptFromResources(String path) {
+        try {
+            URL resource = getClass().getResource(path);
+            if (resource == null) {
+                throw new FileNotFoundException("Script SQL non trouvé: " + path);
+            }
+            return new String(Files.readAllBytes(Paths.get(resource.toURI())));
+        } catch (Exception e) {
+            throw new RuntimeException("Impossible de charger le script SQL: " + path, e);
+        }
     }
 }

@@ -26,7 +26,7 @@ public class HealthResource {
         health.put("status", "UP");
         health.put("timestamp", System.currentTimeMillis());
         health.put("userCount", userService.getUserCount());
-        health.put("uptime", ManagementFactory.getRuntimeMXBean().getUptime());
+        health.put("uptime", ManagementFactory.getRuntimeMXBean().getUptime()); 
 
         return Response.ok(health).build();
     }

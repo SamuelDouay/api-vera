@@ -29,6 +29,7 @@ public class UserService {
         users.put(user1.getId(), user1);
         users.put(user2.getId(), user2);
         userCount.inc(2);
+
     }
 
     public Collection<User> getAllUsers() {

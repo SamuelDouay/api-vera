@@ -19,6 +19,8 @@
         <servlet.version>6.1.0</servlet.version>
         <hikaricp.version>6.3.0</hikaricp.version>
         <postgres.version>42.7.8</postgres.version>
+        <jakata.xml.version>4.0.4</jakata.xml.version>
+        <jaxb.runtime.version>4.0.6</jaxb.runtime.version>
     </properties>
 
     <dependencies>
@@ -47,6 +49,18 @@
             <groupId>org.glassfish.jersey.containers</groupId>
             <artifactId>jersey-container-grizzly2-http</artifactId>
             <version>${jersey.version}</version>
+        </dependency>
+
+        <!-- JAXB pour WADL (nécessaire pour Jersey) -->
+        <dependency>
+            <groupId>org.glassfish.jaxb</groupId>
+            <artifactId>jaxb-runtime</artifactId>
+            <version>${jaxb.runtime.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>jakarta.xml.bind</groupId>
+            <artifactId>jakarta.xml.bind-api</artifactId>
+            <version>${jakata.xml.version}</version>
         </dependency>
 
         <!-- API Servlet Jakarta (NÉCESSAIRE pour Jersey) -->

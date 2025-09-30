@@ -11,7 +11,7 @@
             <AppenderRef ref="Console"/>
         </Root>
 
-        <Logger name="fr.github.vera" level="info" additivity="false">
+        <Logger name="fr.github.vera" level="INFO" additivity="false">
             <AppenderRef ref="Console"/>
         </Logger>
     </Loggers>

@@ -17,7 +17,6 @@ import java.util.Map;
 @Produces(MediaType.APPLICATION_JSON)
 @Tag(name = "Health", description = "Endpoints de santé de l'application")
 public class HealthResource {
-    private final UserService userService = new UserService();
 
     @GET
     @Operation(summary = "Vérifier l'état de santé de l'application")
@@ -25,8 +24,7 @@ public class HealthResource {
         Map<String, Object> health = new HashMap<>();
         health.put("status", "UP");
         health.put("timestamp", System.currentTimeMillis());
-        health.put("userCount", userService.getUserCount());
-        health.put("uptime", ManagementFactory.getRuntimeMXBean().getUptime()); 
+        health.put("uptime", ManagementFactory.getRuntimeMXBean().getUptime());
 
         return Response.ok(health).build();
     }

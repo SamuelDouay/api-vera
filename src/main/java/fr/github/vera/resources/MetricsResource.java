@@ -14,18 +14,17 @@ import java.util.Map;
 @Path("/metrics")
 @Produces(MediaType.APPLICATION_JSON)
 public class MetricsResource {
-    private final UserService userService = new UserService();
 
     @GET
     public Response getMetrics() {
-        MetricRegistry metrics = userService.getMetrics();
+        MetricRegistry metrics = new MetricRegistry();
         Map<String, Object> metricsData = new HashMap<>();
 
         metrics.getTimers().forEach((name, timer) -> {
             Map<String, Object> timerData = new HashMap<>();
-            timerData.put("count", timer.getCount());
-            timerData.put("meanRate", timer.getMeanRate());
-            timerData.put("mean", timer.getSnapshot().getMean());
+            timerData.put("count", 0);
+            timerData.put("meanRate", 0);
+            timerData.put("mean", 0);
             metricsData.put(name, timerData);
         });
 

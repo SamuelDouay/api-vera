@@ -16,7 +16,7 @@ public class Main {
 
     public static void main(String[] args) {
         HttpServer server = null;
-        DatabaseManager databaseManager = new DatabaseManager();
+        DatabaseManager databaseManager = DatabaseManager.getInstance();
 
         try {
             // 1. Initialiser le pool de connexions
@@ -26,10 +26,6 @@ public class Main {
 
             logger.info("Initialisation de la base de données...");
             databaseManager.initialize();
-
-            // 2. Créer les tables si nécessaire
-            logger.info("Création des tables...");
-            //DatabaseInitializer.initializeTables();
 
             // 3. Démarrer le serveur Jersey
             logger.info("Démarrage du serveur HTTP...");

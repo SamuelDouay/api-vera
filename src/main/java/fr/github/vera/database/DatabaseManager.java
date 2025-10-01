@@ -12,16 +12,36 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.sql.Connection;
 import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.List;
 
 public class DatabaseManager {
-    public static final ConfigProperties CONFIG_PROPERTIES = ConfigProperties.getInstance();
+    private static final ConfigProperties CONFIG_PROPERTIES = ConfigProperties.getInstance();
     private static final Logger logger = LogManager.getLogger();
+
+    // Singleton instance
+    private static volatile DatabaseManager instance;
+    private static final Object lock = new Object();
+
     private HikariDataSource dataSource;
     private boolean initialized = false;
     private boolean initializing = false;
 
-    public DatabaseManager() {
+    // Constructeur privé pour empêcher l'instanciation directe
+    private DatabaseManager() {
         // no param
+    }
+
+    // Méthode pour obtenir l'instance unique
+    public static DatabaseManager getInstance() {
+        if (instance == null) {
+            synchronized (lock) {
+                if (instance == null) {
+                    instance = new DatabaseManager();
+                }
+            }
+        }
+        return instance;
     }
 
     public synchronized void initialize() {
@@ -29,21 +49,24 @@ public class DatabaseManager {
             logger.warn("DatabaseManager déjà initialisé");
             return;
         }
-        synchronized (DatabaseManager.class) {
-            if (initialized) return;
-            initializing = true;
 
-            try {
-                loadPostgreSQLDriver();
-                this.dataSource = createDataSource();
-                testConnection();
-                initializeDatabaseSchema();
-                registerShutdownHook();
-                this.initialized = true;
-                logger.debug("DatabaseManager initialisé avec succès");
-            } finally {
-                initializing = false;
-            }
+        if (initializing) {
+            logger.warn("DatabaseManager en cours d'initialisation");
+            return;
+        }
+
+        initializing = true;
+
+        try {
+            loadPostgreSQLDriver();
+            this.dataSource = createDataSource();
+            testConnection();
+            initializeDatabaseSchema();
+            registerShutdownHook();
+            this.initialized = true;
+            logger.debug("DatabaseManager initialisé avec succès");
+        } finally {
+            initializing = false;
         }
     }
 
@@ -68,7 +91,7 @@ public class DatabaseManager {
 
             // Configuration du pool de connexions
             config.setMaximumPoolSize(Integer.parseInt(CONFIG_PROPERTIES.getProperty("db.pool.size")));
-            config.setMinimumIdle(Integer.parseInt(CONFIG_PROPERTIES.getProperty("db.pool.size"))); // Même valeur que le pool max pour PostgreSQL
+            config.setMinimumIdle(Integer.parseInt(CONFIG_PROPERTIES.getProperty("db.pool.size")));
             config.setConnectionTimeout(Long.parseLong(CONFIG_PROPERTIES.getProperty("db.connection.timeout")));
             config.setIdleTimeout(Long.parseLong(CONFIG_PROPERTIES.getProperty("db.idle.timeout")));
             config.setMaxLifetime(Long.parseLong(CONFIG_PROPERTIES.getProperty("db.max.lifetime")));
@@ -203,7 +226,7 @@ public class DatabaseManager {
     public <T> T executeWithConnection(DatabaseAction<T> action, String context) {
         try (Connection conn = getConnection()) {
             return action.execute(conn);
-        }  catch (Exception e) {
+        } catch (Exception e) {
             throw new RuntimeException("Erreur inattendue lors de " + context, e);
         }
     }
@@ -228,14 +251,14 @@ public class DatabaseManager {
         executeWithConnection(connection -> {
             try {
                 String script = loadScriptFromResources(scriptPath);
-                String[] sqlCommands = script.split(";");
+                List<String> sqlCommands = splitSqlScript(script);
 
                 for (String sqlCommand : sqlCommands) {
                     String trimmedSql = sqlCommand.trim();
-                    if (!trimmedSql.isEmpty()) {
+                    if (!trimmedSql.isEmpty() && !trimmedSql.startsWith("--")) {
                         try (var statement = connection.createStatement()) {
                             statement.execute(trimmedSql);
-                            logger.debug("SQL exécuté: {}", trimmedSql);
+                            logger.debug("SQL exécuté: {}", trimmedSql.substring(0, Math.min(50, trimmedSql.length())) + "...");
                         }
                     }
                 }
@@ -244,6 +267,49 @@ public class DatabaseManager {
                 throw new SQLException("Erreur lors de l'exécution du script SQL", e);
             }
         }, "exécution script d'initialisation");
+    }
+
+    private List<String> splitSqlScript(String script) {
+        List<String> commands = new ArrayList<>();
+        StringBuilder currentCommand = new StringBuilder();
+        boolean inDollarQuote = false;
+        String dollarQuoteTag = null;
+
+        String[] lines = script.split("\n");
+
+        for (String line : lines) {
+            String trimmedLine = line.trim();
+
+            // Ignorer les commentaires complets
+            if (trimmedLine.startsWith("--") && !inDollarQuote) {
+                continue;
+            }
+
+            // Détecter les dollar quotes
+            if (trimmedLine.contains("$$")) {
+                if (!inDollarQuote) {
+                    inDollarQuote = true;
+                    dollarQuoteTag = "$$";
+                } else if (trimmedLine.contains(dollarQuoteTag)) {
+                    inDollarQuote = false;
+                }
+            }
+
+            currentCommand.append(line).append("\n");
+
+            // Si on trouve un ; en dehors d'un dollar quote, c'est la fin de la commande
+            if (!inDollarQuote && line.contains(";")) {
+                commands.add(currentCommand.toString());
+                currentCommand = new StringBuilder();
+            }
+        }
+
+        // Ajouter la dernière commande si elle existe
+        if (currentCommand.length() > 0) {
+            commands.add(currentCommand.toString());
+        }
+
+        return commands;
     }
 
     private String loadScriptFromResources(String path) {

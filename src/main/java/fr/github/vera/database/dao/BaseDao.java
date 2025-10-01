@@ -7,6 +7,7 @@ import org.apache.logging.log4j.Logger;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Statement;
 
 public abstract class BaseDao {
     protected static final Logger logger = LogManager.getLogger(BaseDao.class);
@@ -93,6 +94,39 @@ public abstract class BaseDao {
         } catch (Exception e) {
             logger.error("Erreur lors de la requête [{}]: {}", sql, e.getMessage(), e);
             return 0;
+        }
+    }
+
+    protected Integer executeUpdateWithGeneratedKeys(String sql, String context, Object... params) {
+        try {
+            return databaseManager.executeWithConnection(conn -> {
+                try (PreparedStatement ps = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
+                    for (int i = 0; i < params.length; i++) {
+                        ps.setObject(i + 1, params[i]);
+                    }
+
+                    int affectedRows = ps.executeUpdate();
+                    logger.info("{} - {} row(s) affected", context, affectedRows);
+
+                    if (affectedRows == 0) {
+                        throw new SQLException("Creating failed, no rows affected.");
+                    }
+
+                    // Récupérer l'ID généré
+                    try (ResultSet generatedKeys = ps.getGeneratedKeys()) {
+                        if (generatedKeys.next()) {
+                            return generatedKeys.getInt(1); // Retourne l'ID généré
+                        } else {
+                            throw new SQLException("Creating failed, no ID obtained.");
+                        }
+                    }
+                }
+            }, context);
+
+
+        } catch (Exception e) {
+            logger.error("Error during {}: {}", context, e.getMessage());
+            throw new RuntimeException("Database error during " + context, e);
         }
     }
 

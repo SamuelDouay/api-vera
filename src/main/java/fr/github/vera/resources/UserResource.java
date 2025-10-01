@@ -13,15 +13,21 @@ import jakarta.validation.Valid;
 import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import java.net.URI;
-import java.util.*;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 
 @Path("/users")
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)
 @Tag(name = "Users", description = "Gestion des utilisateurs")
 public class UserResource {
+    private static final Logger log = LogManager.getLogger(UserResource.class);
     private final UserService userService = new UserService();
 
     @GET
@@ -37,7 +43,7 @@ public class UserResource {
     public Response getAllUsers(@QueryParam("limit") @DefaultValue("100") int limit,
                                 @QueryParam("offset") @DefaultValue("0") int offset) {
         try {
-            List<User> users = userService.getAllUsers();
+            List<User> users = userService.getAllUsers(limit, offset);
 
             // Pagination
             int start = Math.min(offset, users.size());
@@ -87,9 +93,9 @@ public class UserResource {
                     .build();
         }
 
-        User user = userService.getUserById(id);
-        if (user != null) {
-            ResponseApi<User> response = new ResponseApi<>(user);
+        Optional<User> user = userService.getUserById(id);
+        if (user.isPresent()) {
+            ResponseApi<User> response = new ResponseApi<>(user.get());
             return Response.ok(response).build();
         } else {
             ResponseApi<String> errorResponse = new ResponseApi<>("User not found");
@@ -97,6 +103,62 @@ public class UserResource {
                     .entity(errorResponse)
                     .build();
         }
+    }
+
+    @GET
+    @Path("/xemail")
+    @Operation(
+            summary = "Récupérer un utilisateur par email",
+            description = "Retourne un utilisateur spécifique par son email"
+    )
+    @ApiResponses({
+            @ApiResponse(
+                    responseCode = "200",
+                    description = "User found",
+                    content = @Content(schema = @Schema(implementation = ResponseApi.class))
+            ),
+            @ApiResponse(
+                    responseCode = "404",
+                    description = "User not found",
+                    content = @Content(schema = @Schema(implementation = ResponseApi.class))
+            )
+    })
+    public Response getUserByEmail(@QueryParam("email") String email) {
+        if (email == null) {
+            ResponseApi<String> errorResponse = new ResponseApi<>("Invalid user email");
+            return Response.status(Response.Status.BAD_REQUEST)
+                    .entity(errorResponse)
+                    .build();
+        }
+
+        Optional<User> user = userService.getUserByEmail(email);
+        if (user.isPresent()) {
+            ResponseApi<User> response = new ResponseApi<>(user.get());
+            return Response.ok(response).build();
+        } else {
+            ResponseApi<String> errorResponse = new ResponseApi<>("User not found");
+            return Response.status(Response.Status.NOT_FOUND)
+                    .entity(errorResponse)
+                    .build();
+        }
+    }
+
+    @GET
+    @Path("/count")
+    @Operation(
+            summary = "Récupérer le nombre total d'utilisateurs",
+            description = "Retourne le nombre total d'utilisateur"
+    )
+    @ApiResponses({
+            @ApiResponse(
+                    responseCode = "200",
+                    content = @Content(schema = @Schema(implementation = ResponseApi.class))
+            )
+    })
+    public Response count() {
+        Integer count = userService.count();
+        ResponseApi<Integer> response = new ResponseApi<>(count);
+        return Response.ok(response).build();
     }
 
     @POST
@@ -159,9 +221,9 @@ public class UserResource {
                     .build();
         }
 
-        Optional<User> updatedUser = userService.updateUser(id, user);
-        if (updatedUser.isPresent()) {
-            ResponseApi<User> response = new ResponseApi<>(updatedUser.get());
+        User updatedUser = userService.updateUser(id, user);
+        if (updatedUser != null) {
+            ResponseApi<User> response = new ResponseApi<>(updatedUser);
             return Response.ok(response).build();
         } else {
             ResponseApi<String> errorResponse = new ResponseApi<>("User not found");
@@ -206,4 +268,5 @@ public class UserResource {
                     .build();
         }
     }
+
 }

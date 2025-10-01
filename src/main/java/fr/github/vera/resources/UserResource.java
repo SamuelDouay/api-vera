@@ -37,8 +37,7 @@ public class UserResource {
     public Response getAllUsers(@QueryParam("limit") @DefaultValue("100") int limit,
                                 @QueryParam("offset") @DefaultValue("0") int offset) {
         try {
-            Collection<User> allUsers = userService.getAllUsers();
-            List<User> users = new ArrayList<>(allUsers);
+            List<User> users = userService.getAllUsers();
 
             // Pagination
             int start = Math.min(offset, users.size());
@@ -88,9 +87,9 @@ public class UserResource {
                     .build();
         }
 
-        Optional<User> user = userService.getUserById(id);
-        if (user.isPresent()) {
-            ResponseApi<User> response = new ResponseApi<>(user.get());
+        User user = userService.getUserById(id);
+        if (user != null) {
+            ResponseApi<User> response = new ResponseApi<>(user);
             return Response.ok(response).build();
         } else {
             ResponseApi<String> errorResponse = new ResponseApi<>("User not found");

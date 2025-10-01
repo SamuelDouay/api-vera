@@ -1,6 +1,5 @@
 package fr.github.vera.database.dao;
 
-import fr.github.vera.database.DatabaseManager;
 import fr.github.vera.model.User;
 
 import java.util.ArrayList;
@@ -44,5 +43,39 @@ public class UserDao extends BaseDao{
             }
             return result;
         }, null, "GET USERS BY ID =" + id, id);
+    }
+
+    public void createUser(User user) {
+        String sql = """
+                INSERT INTO users (name, email) VALUES
+                    (?, ?)
+                """;
+        executeUpdate(sql, "CREATE USER", user.getName(), user.getEmail());
+    }
+
+    public User getUserNameAndEmail(User user) {
+        String sql = """
+                SELECT * FROM users
+                WHERE users.name = ? and users.email = ?
+                """;
+        return executeQueryWithParams(sql, rs -> {
+            User result = null;
+            while (rs.next()) {
+                result = new User(
+                        rs.getInt(1),
+                        rs.getString(2),
+                        rs.getString(3)
+                );
+            }
+            return result;
+        }, null, "GET USERS BY user =" + user.getName(), user.getName(), user.getEmail());
+    }
+
+    public int deleteUserById(Integer id) {
+        String sql = """
+                DELETE FROM users
+                WHERE users.id = ?
+                """;
+        return executeUpdate(sql, "DELETE USER ID :" + id, id);
     }
 }

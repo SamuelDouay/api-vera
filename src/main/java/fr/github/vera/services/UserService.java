@@ -6,10 +6,7 @@ import com.codahale.metrics.Timer;
 import fr.github.vera.database.dao.UserDao;
 import fr.github.vera.model.User;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -28,18 +25,17 @@ public class UserService {
 
     }
 
-    public Collection<User> getAllUsers() {
+    public List<User> getAllUsers() {
         return userDao.getAllUser();
     }
 
-    public Optional<User> getUserById(Integer id) {
-        return Optional.ofNullable(userDao.getUserById(id));
+    public User getUserById(Integer id) {
+        return userDao.getUserById(id);
     }
 
     public User createUser(User user) {
-        user.setId(idCounter.getAndIncrement());
-        users.put(user.getId(), user);
-        return user;
+        userDao.createUser(user);
+        return userDao.getUserNameAndEmail(user);
     }
 
     public Optional<User> updateUser(Integer id, User updatedUser) {
@@ -53,7 +49,7 @@ public class UserService {
     }
 
     public boolean deleteUser(Integer id) {
-        User removed = users.remove(id);
-        return removed != null;
+        int remove = userDao.deleteUserById(id);
+        return remove != 0;
     }
 }

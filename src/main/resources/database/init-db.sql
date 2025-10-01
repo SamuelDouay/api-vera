@@ -34,5 +34,4 @@ INSERT INTO users (name, email) VALUES
     ('Jane Smith', 'jane.smith@example.com'),
     ('Bob Martin', 'bob.martin@example.com'),
     ('Alice Johnson', 'alice.johnson@example.com'),
-    ('Charlie Brown', 'charlie.brown@example.com')
-ON CONFLICT (email) DO NOTHING;
+    ('Charlie Brown', 'charlie.brown@example.com');

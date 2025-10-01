@@ -1,7 +1,6 @@
 package fr.github.vera.model;
 
 import jakarta.validation.constraints.Email;
-import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 
@@ -27,7 +26,6 @@ public class User {
 
     // Getters et Setters
     public Integer getId() { return id; }
-    public void setId(Integer id) { this.id = id; }
 
     public String getName() { return name; }
     public void setName(String name) { this.name = name; }

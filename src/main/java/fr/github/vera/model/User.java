@@ -7,12 +7,12 @@ import jakarta.validation.constraints.Size;
 public class User {
     private Integer id;
 
-    @NotBlank(message = "Name cannot be blank")
-    @Size(min = 2, max = 100, message = "Name must be between 2 and 100 characters")
+    @NotBlank(message = "name cannot be blank")
+    @Size(min = 2, max = 255, message = "name must be between 2 and 255 characters")
     private String name;
 
-    @NotBlank(message = "Email cannot be blank")
-    @Email(message = "Email should be valid")
+    @NotBlank(message = "email cannot be blank")
+    @Email(message = "email should be valid")
     private String email;
 
     // Constructeurs

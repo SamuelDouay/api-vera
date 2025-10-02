@@ -1,11 +1,7 @@
 package fr.github.vera.config;
 
-import fr.github.vera.exception.GlobalExceptionMapper;
 import fr.github.vera.filters.CorsFilter;
-import fr.github.vera.resources.HealthResource;
-import fr.github.vera.resources.MetricsResource;
 import fr.github.vera.resources.SwaggerUIResource;
-import fr.github.vera.resources.UserResource;
 import io.swagger.v3.jaxrs2.integration.JaxrsOpenApiContextBuilder;
 import io.swagger.v3.jaxrs2.integration.resources.OpenApiResource;
 import io.swagger.v3.oas.integration.OpenApiConfigurationException;
@@ -16,7 +12,6 @@ import io.swagger.v3.oas.models.info.Info;
 import io.swagger.v3.oas.models.security.SecurityScheme;
 import org.glassfish.jersey.server.ResourceConfig;
 
-import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -24,13 +19,11 @@ public class JerseyConfig extends ResourceConfig {
 
     public JerseyConfig() {
         // Register resources
-        register(UserResource.class);
-        register(HealthResource.class);
-        register(MetricsResource.class);
+        packages("fr.github.vera.resources");
 
         // Register filters and exception mappers
         register(CorsFilter.class);
-        register(GlobalExceptionMapper.class);
+        packages("fr.github.vera.exception");
 
         // Configure Swagger
         configureSwagger();

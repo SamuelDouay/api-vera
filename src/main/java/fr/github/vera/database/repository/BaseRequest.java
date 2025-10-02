@@ -1,4 +1,4 @@
-package fr.github.vera.database.dao;
+package fr.github.vera.database.repository;
 
 import fr.github.vera.database.DatabaseManager;
 import org.apache.logging.log4j.LogManager;
@@ -9,12 +9,12 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 
-public abstract class BaseDao {
-    protected static final Logger logger = LogManager.getLogger(BaseDao.class);
+public abstract class BaseRequest {
+    protected static final Logger logger = LogManager.getLogger(BaseRequest.class);
 
     private final DatabaseManager databaseManager = DatabaseManager.getInstance();
 
-    protected BaseDao() {
+    protected BaseRequest() {
     }
 
     private void logMetrics(String sql, long startTime) {

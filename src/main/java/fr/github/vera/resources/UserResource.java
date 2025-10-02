@@ -1,5 +1,6 @@
 package fr.github.vera.resources;
 
+import fr.github.vera.model.ResponseApi;
 import fr.github.vera.model.User;
 import fr.github.vera.services.UserService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -9,12 +10,11 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.ConstraintViolationException;
 import jakarta.validation.Valid;
 import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 
 import java.net.URI;
 import java.util.HashMap;
@@ -27,7 +27,6 @@ import java.util.Optional;
 @Consumes(MediaType.APPLICATION_JSON)
 @Tag(name = "Users", description = "Gestion des utilisateurs")
 public class UserResource {
-    private static final Logger log = LogManager.getLogger(UserResource.class);
     private final UserService userService = new UserService();
 
     @GET
@@ -87,7 +86,7 @@ public class UserResource {
     })
     public Response getUserById(@PathParam("id") Integer id) {
         if (id == null || id <= 0) {
-            ResponseApi<String> errorResponse = new ResponseApi<>("Invalid user ID");
+            ResponseApi<String> errorResponse = new ResponseApi<>("Invalid user ID: must be a positive integer");
             return Response.status(Response.Status.BAD_REQUEST)
                     .entity(errorResponse)
                     .build();
@@ -98,7 +97,7 @@ public class UserResource {
             ResponseApi<User> response = new ResponseApi<>(user.get());
             return Response.ok(response).build();
         } else {
-            ResponseApi<String> errorResponse = new ResponseApi<>("User not found");
+            ResponseApi<String> errorResponse = new ResponseApi<>("User not found with ID: " + id);
             return Response.status(Response.Status.NOT_FOUND)
                     .entity(errorResponse)
                     .build();
@@ -106,7 +105,7 @@ public class UserResource {
     }
 
     @GET
-    @Path("/xemail")
+    @Path("/email")
     @Operation(
             summary = "Récupérer un utilisateur par email",
             description = "Retourne un utilisateur spécifique par son email"
@@ -118,18 +117,36 @@ public class UserResource {
                     content = @Content(schema = @Schema(implementation = ResponseApi.class))
             ),
             @ApiResponse(
+                    responseCode = "400",
+                    description = "Invalid user email",
+                    content = @Content(schema = @Schema(implementation = ResponseApi.class))
+            ),
+            @ApiResponse(
                     responseCode = "404",
                     description = "User not found",
+                    content = @Content(schema = @Schema(implementation = ResponseApi.class))
+            ),
+            @ApiResponse(
+                    responseCode = "500",
+                    description = "Internal server error",
                     content = @Content(schema = @Schema(implementation = ResponseApi.class))
             )
     })
     public Response getUserByEmail(@QueryParam("email") String email) {
-        if (email == null) {
-            ResponseApi<String> errorResponse = new ResponseApi<>("Invalid user email");
+        if (email == null || email.isBlank()) {
+            ResponseApi<String> errorResponse = new ResponseApi<>("Email parameter is required and cannot be empty");
             return Response.status(Response.Status.BAD_REQUEST)
                     .entity(errorResponse)
                     .build();
         }
+
+        if (!isValidEmailFormat(email)) {
+            ResponseApi<String> errorResponse = new ResponseApi<>("Invalid email format");
+            return Response.status(Response.Status.BAD_REQUEST)
+                    .entity(errorResponse)
+                    .build();
+        }
+
 
         Optional<User> user = userService.getUserByEmail(email);
         if (user.isPresent()) {
@@ -141,6 +158,11 @@ public class UserResource {
                     .entity(errorResponse)
                     .build();
         }
+    }
+
+    private boolean isValidEmailFormat(String email) {
+        String emailRegex = "^[A-Za-z0-9+_.-]+@(.+)$";
+        return email.matches(emailRegex);
     }
 
     @GET
@@ -181,11 +203,23 @@ public class UserResource {
     })
     public Response createUser(@Valid User user) {
         try {
+            if (!isValidEmailFormat(user.getEmail())) {
+                ResponseApi<String> errorResponse = new ResponseApi<>("Invalid email format");
+                return Response.status(Response.Status.BAD_REQUEST)
+                        .entity(errorResponse)
+                        .build();
+            }
+
             User createdUser = userService.createUser(user);
             ResponseApi<User> response = new ResponseApi<>(createdUser);
             return Response.status(Response.Status.CREATED)
                     .entity(response)
                     .location(URI.create("/users/" + createdUser.getId()))
+                    .build();
+        } catch (ConstraintViolationException e) {
+            ResponseApi<String> errorResponse = new ResponseApi<>(e.getMessage());
+            return Response.status(Response.Status.BAD_REQUEST)
+                    .entity(errorResponse)
                     .build();
         } catch (Exception e) {
             ResponseApi<String> errorResponse = new ResponseApi<>("Failed to create user: " + e.getMessage());
@@ -214,20 +248,39 @@ public class UserResource {
             )
     })
     public Response updateUser(@PathParam("id") Integer id, @Valid User user) {
-        if (id == null || id <= 0) {
-            ResponseApi<String> errorResponse = new ResponseApi<>("Invalid user ID");
+        try {
+            if (id == null || id <= 0) {
+                ResponseApi<String> errorResponse = new ResponseApi<>("Invalid user ID");
+                return Response.status(Response.Status.BAD_REQUEST)
+                        .entity(errorResponse)
+                        .build();
+            }
+
+            if (!isValidEmailFormat(user.getEmail())) {
+                ResponseApi<String> errorResponse = new ResponseApi<>("Invalid email format");
+                return Response.status(Response.Status.BAD_REQUEST)
+                        .entity(errorResponse)
+                        .build();
+            }
+
+            User updatedUser = userService.updateUser(id, user);
+            if (updatedUser != null) {
+                ResponseApi<User> response = new ResponseApi<>(updatedUser);
+                return Response.ok(response).build();
+            } else {
+                ResponseApi<String> errorResponse = new ResponseApi<>("User not found");
+                return Response.status(Response.Status.NOT_FOUND)
+                        .entity(errorResponse)
+                        .build();
+            }
+        } catch (ConstraintViolationException e) {
+            ResponseApi<String> errorResponse = new ResponseApi<>(e.getMessage());
             return Response.status(Response.Status.BAD_REQUEST)
                     .entity(errorResponse)
                     .build();
-        }
-
-        User updatedUser = userService.updateUser(id, user);
-        if (updatedUser != null) {
-            ResponseApi<User> response = new ResponseApi<>(updatedUser);
-            return Response.ok(response).build();
-        } else {
-            ResponseApi<String> errorResponse = new ResponseApi<>("User not found");
-            return Response.status(Response.Status.NOT_FOUND)
+        } catch (Exception e) {
+            ResponseApi<String> errorResponse = new ResponseApi<>("Failed to update user: " + e.getMessage());
+            return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
                     .entity(errorResponse)
                     .build();
         }

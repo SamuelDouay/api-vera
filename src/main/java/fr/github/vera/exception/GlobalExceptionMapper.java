@@ -1,6 +1,6 @@
 package fr.github.vera.exception;
 
-import fr.github.vera.model.ApiResponse;
+import fr.github.vera.model.ResponseApi;
 import jakarta.validation.ConstraintViolationException;
 import jakarta.ws.rs.NotFoundException;
 import jakarta.ws.rs.WebApplicationException;
@@ -23,7 +23,13 @@ public class GlobalExceptionMapper implements ExceptionMapper<Exception> {
             case NotFoundException _ -> {
                 logger.warn("Route not found: {}", exception.getMessage());
                 return Response.status(Response.Status.NOT_FOUND)
-                        .entity(new ApiResponse("Endpoint not found", 404))
+                        .entity(new ResponseApi<>("Endpoint not found"))
+                        .build();
+            }
+            case ConstraintViolationException _ -> {
+                logger.warn("Validation error: {}", exception.getMessage());
+                return Response.status(Response.Status.BAD_REQUEST)
+                        .entity(new ResponseApi<>("Invalid input data"))
                         .build();
             }
             case WebApplicationException webEx -> {
@@ -31,23 +37,15 @@ public class GlobalExceptionMapper implements ExceptionMapper<Exception> {
                 String message = getCustomMessageForStatus(status);
                 logger.warn("Web application error: {} - {}", status, message);
                 return Response.status(status)
-                        .entity(new ApiResponse(message, status))
+                        .entity(new ResponseApi<>(exception.getMessage()))
                         .build();
             }
-            case ConstraintViolationException _ -> {
-                logger.warn("Validation error: {}", exception.getMessage());
-                return Response.status(Response.Status.BAD_REQUEST)
-                        .entity(new ApiResponse("Invalid input data", 400))
-                        .build();
-            }
-            default -> {
-                logger.error("Unhandled exception: ", exception);
-            }
+            default -> logger.error("Unhandled exception: ", exception);
         }
 
         // Generic error
         return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
-                .entity(new ApiResponse("Internal server error", 500))
+                .entity(new ResponseApi<>("Internal server error"))
                 .build();
     }
 

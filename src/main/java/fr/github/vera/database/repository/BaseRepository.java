@@ -1,14 +1,12 @@
 package fr.github.vera.database.repository;
 
-import fr.github.vera.database.dao.BaseDao;
-
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
-public abstract class BaseRepository<T, ID> extends BaseDao implements IRepository<T, ID> {
+public abstract class BaseRepository<T, ID> extends BaseRequest implements IRepository<T, ID> {
     protected final String tableName;
     protected final Class<T> entityClass;
 

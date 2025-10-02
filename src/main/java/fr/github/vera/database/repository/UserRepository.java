@@ -34,8 +34,8 @@ public class UserRepository extends BaseRepository<User, Integer> implements IUs
 
 
     private User update(User user) {
-        String sql = "UPDATE users SET name = ?, email = ? WHERE id = ?";
-        executeUpdate(sql, "UPDATE USER", user.getName(), user.getEmail(), user.getId());
+        String sql = "UPDATE users SET name = ?, surname = ?, email = ? WHERE id = ?";
+        executeUpdate(sql, "UPDATE USER", user.getName(), user.getSurname(), user.getEmail(), user.getId());
         return user;
     }
 
@@ -50,6 +50,7 @@ public class UserRepository extends BaseRepository<User, Integer> implements IUs
         return new User(
                 rs.getInt("id"),
                 rs.getString("name"),
+                rs.getString("surname"),
                 rs.getString("email")
         );
     }

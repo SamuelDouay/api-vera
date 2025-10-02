@@ -8,8 +8,12 @@ public class User {
     private Integer id;
 
     @NotBlank(message = "name cannot be blank")
-    @Size(min = 2, max = 255, message = "name must be between 2 and 255 characters")
+    @Size(max = 255, message = "name must max 255 characters")
     private String name;
+
+    @NotBlank(message = "surname cannot be blank")
+    @Size(max = 255, message = "surname must max 255 characters")
+    private String surname;
 
     @NotBlank(message = "email cannot be blank")
     @Email(message = "email should be valid")
@@ -19,10 +23,11 @@ public class User {
     public User() {
     }
 
-    public User(Integer id, String name, String email) {
+    public User(Integer id, String name, String surname, String email) {
         this.id = id;
         this.name = name;
         this.email = email;
+        this.surname = surname;
     }
 
     // Getters et Setters
@@ -38,16 +43,12 @@ public class User {
         return name;
     }
 
-    public void setName(String name) {
-        this.name = name;
+    public String getSurname() {
+        return surname;
     }
 
     public String getEmail() {
         return email;
-    }
-
-    public void setEmail(String email) {
-        this.email = email;
     }
 
     @Override

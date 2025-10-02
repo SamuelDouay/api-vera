@@ -3,8 +3,13 @@ package fr.github.vera.resources;
 import fr.github.vera.model.AuthResponse;
 import fr.github.vera.model.LoginRequest;
 import fr.github.vera.model.RegisterRequest;
+import fr.github.vera.model.ResponseApi;
 import fr.github.vera.services.AuthService;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.MediaType;
@@ -24,6 +29,18 @@ public class AuthResource {
     @POST
     @Path("/login")
     @Operation(summary = "Connexion utilisateur")
+    @ApiResponses({
+            @ApiResponse(
+                    responseCode = "200",
+                    description = "User found",
+                    content = @Content(schema = @Schema(implementation = ResponseApi.class))
+            ),
+            @ApiResponse(
+                    responseCode = "404",
+                    description = "User not found",
+                    content = @Content(schema = @Schema(implementation = ResponseApi.class))
+            )
+    })
     public Response login(LoginRequest request) {
         // Authentification email/password
         AuthResponse auth = authService.authenticate(request);

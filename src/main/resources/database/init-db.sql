@@ -1,7 +1,8 @@
 -- Créer la table users
 CREATE TABLE IF NOT EXISTS users (
     id SERIAL PRIMARY KEY,
-    name VARCHAR(100) NOT NULL,
+    name VARCHAR(255) NOT NULL,
+    surname VARCHAR(255) NOT NULL,
     email VARCHAR(255) NOT NULL UNIQUE,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
@@ -29,9 +30,10 @@ CREATE TRIGGER update_users_updated_at
     EXECUTE FUNCTION update_updated_at_column();
 
 -- Insérer des données de test
-INSERT INTO users (name, email) VALUES
-    ('John Doe', 'john.doe@example.com'),
-    ('Jane Smith', 'jane.smith@example.com'),
-    ('Bob Martin', 'bob.martin@example.com'),
-    ('Alice Johnson', 'alice.johnson@example.com'),
-    ('Charlie Brown', 'charlie.brown@example.com');
+INSERT INTO users (name, surname, email)
+VALUES  ('John', 'Doe', 'john.doe@example.com'),
+        ('Jane', 'Smith', 'jane.smith@example.com'),
+        ('Bob', 'Martin', 'bob.martin@example.com'),
+        ('Alice', 'Johnson', 'alice.johnson@example.com'),
+        ('Charlie', 'Brown', 'charlie.brown@example.com')
+ON CONFLICT (email) DO NOTHING;

@@ -75,7 +75,7 @@ public class UserResource {
     @ApiResponses({
             @ApiResponse(
                     responseCode = "200",
-                    description = "User found",
+                    description = "Users retrieved successfully",
                     content = @Content(schema = @Schema(implementation = ResponseApi.class))
             ),
             @ApiResponse(
@@ -113,7 +113,7 @@ public class UserResource {
     @ApiResponses({
             @ApiResponse(
                     responseCode = "200",
-                    description = "User found",
+                    description = "Users retrieved successfully",
                     content = @Content(schema = @Schema(implementation = ResponseApi.class))
             ),
             @ApiResponse(
@@ -124,11 +124,6 @@ public class UserResource {
             @ApiResponse(
                     responseCode = "404",
                     description = "User not found",
-                    content = @Content(schema = @Schema(implementation = ResponseApi.class))
-            ),
-            @ApiResponse(
-                    responseCode = "500",
-                    description = "Internal server error",
                     content = @Content(schema = @Schema(implementation = ResponseApi.class))
             )
     })
@@ -174,6 +169,7 @@ public class UserResource {
     @ApiResponses({
             @ApiResponse(
                     responseCode = "200",
+                    description = "return user size",
                     content = @Content(schema = @Schema(implementation = ResponseApi.class))
             )
     })

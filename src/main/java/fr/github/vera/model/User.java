@@ -14,9 +14,6 @@ public class User {
     @NotBlank(message = "email cannot be blank")
     @Email(message = "email should be valid")
     private String email;
-    private String password; // Hashé
-    private String role = "USER";
-    private Boolean enabled = true;
 
     // Constructeurs
     public User() {
@@ -26,30 +23,6 @@ public class User {
         this.id = id;
         this.name = name;
         this.email = email;
-    }
-
-    public String getPassword() {
-        return password;
-    }
-
-    public void setPassword(String password) {
-        this.password = password;
-    }
-
-    public String getRole() {
-        return role;
-    }
-
-    public void setRole(String role) {
-        this.role = role;
-    }
-
-    public Boolean getEnabled() {
-        return enabled;
-    }
-
-    public void setEnabled(Boolean enabled) {
-        this.enabled = enabled;
     }
 
     // Getters et Setters

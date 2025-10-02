@@ -70,6 +70,16 @@ public class UserRepository extends BaseRepository<User, Integer> implements IUs
         return executeQueryWithParams(sql, rs -> rs.next() ? Optional.of(mapResultSet(rs)) : Optional.empty(), Optional.empty(), "FIND USER BY EMAIL", email);
     }
 
+    @Override
+    public boolean existsByEmail(String email) {
+        return false;
+    }
+
+    @Override
+    public List<User> findByRole(String role) {
+        return List.of();
+    }
+
     private void validateUserForCreation(User user) {
         if (user == null) throw new IllegalArgumentException("User cannot be null");
         if (user.getName() == null || user.getName().trim().isEmpty()) {

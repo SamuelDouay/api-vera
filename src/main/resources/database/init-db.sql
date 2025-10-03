@@ -4,6 +4,8 @@ CREATE TABLE IF NOT EXISTS users (
     name VARCHAR(255) NOT NULL,
     surname VARCHAR(255) NOT NULL,
     email VARCHAR(255) NOT NULL UNIQUE,
+    role VARCHAR(255) DEFAULT 'user',
+    password VARCHAR(255) NOT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
@@ -30,10 +32,10 @@ CREATE TRIGGER update_users_updated_at
     EXECUTE FUNCTION update_updated_at_column();
 
 -- Insérer des données de test
-INSERT INTO users (name, surname, email)
-VALUES  ('John', 'Doe', 'john.doe@example.com'),
-        ('Jane', 'Smith', 'jane.smith@example.com'),
-        ('Bob', 'Martin', 'bob.martin@example.com'),
-        ('Alice', 'Johnson', 'alice.johnson@example.com'),
-        ('Charlie', 'Brown', 'charlie.brown@example.com')
+INSERT INTO users (name, surname, email, password)
+VALUES  ('John', 'Doe', 'john.doe@example.com', '$argon2id$v=19$m=65536,t=10,p=1$Q2+UgerwZFJyMGC/P6O6fQ$Wq+arapkagYKmHZOeAmEvnCO3h7F8zKQaRU1gilEbOc'),
+        ('Jane', 'Smith', 'jane.smith@example.com', '$argon2id$v=19$m=65536,t=10,p=1$Q2+UgerwZFJyMGC/P6O6fQ$Wq+arapkagYKmHZOeAmEvnCO3h7F8zKQaRU1gilEbOc'),
+        ('Bob', 'Martin', 'bob.martin@example.com', '$argon2id$v=19$m=65536,t=10,p=1$Q2+UgerwZFJyMGC/P6O6fQ$Wq+arapkagYKmHZOeAmEvnCO3h7F8zKQaRU1gilEbOc'),
+        ('Alice', 'Johnson', 'alice.johnson@example.com', '$argon2id$v=19$m=65536,t=10,p=1$Q2+UgerwZFJyMGC/P6O6fQ$Wq+arapkagYKmHZOeAmEvnCO3h7F8zKQaRU1gilEbOc'),
+        ('Charlie', 'Brown', 'charlie.brown@example.com', '$argon2id$v=19$m=65536,t=10,p=1$Q2+UgerwZFJyMGC/P6O6fQ$Wq+arapkagYKmHZOeAmEvnCO3h7F8zKQaRU1gilEbOc')
 ON CONFLICT (email) DO NOTHING;

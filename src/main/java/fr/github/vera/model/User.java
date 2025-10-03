@@ -18,16 +18,20 @@ public class User {
     @NotBlank(message = "email cannot be blank")
     @Email(message = "email should be valid")
     private String email;
+    private String role;
+    private String password;
 
     // Constructeurs
     public User() {
     }
 
-    public User(Integer id, String name, String surname, String email) {
+    public User(Integer id, String name, String surname, String email, String role, String password) {
         this.id = id;
         this.name = name;
         this.email = email;
         this.surname = surname;
+        this.role = role;
+        this.password = password;
     }
 
     // Getters et Setters
@@ -43,12 +47,40 @@ public class User {
         return name;
     }
 
+    public void setName(String name) {
+        this.name = name;
+    }
+
     public String getSurname() {
         return surname;
     }
 
+    public void setSurname(String surname) {
+        this.surname = surname;
+    }
+
     public String getEmail() {
         return email;
+    }
+
+    public void setEmail(String email) {
+        this.email = email;
+    }
+
+    public String getPassword() {
+        return password;
+    }
+
+    public void setPassword(String password) {
+        this.password = password;
+    }
+
+    public String getRole() {
+        return role;
+    }
+
+    public void setRole(String role) {
+        this.role = role;
     }
 
     @Override

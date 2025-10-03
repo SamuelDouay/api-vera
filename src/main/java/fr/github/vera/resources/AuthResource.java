@@ -1,13 +1,8 @@
 package fr.github.vera.resources;
 
-import fr.github.vera.model.AuthResponse;
-import fr.github.vera.model.LoginRequest;
-import fr.github.vera.model.RegisterRequest;
-import fr.github.vera.model.ResponseApi;
+import fr.github.vera.model.*;
 import fr.github.vera.services.AuthService;
 import io.swagger.v3.oas.annotations.Operation;
-import io.swagger.v3.oas.annotations.media.Content;
-import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -20,66 +15,88 @@ import jakarta.ws.rs.core.Response;
 @Consumes(MediaType.APPLICATION_JSON)
 @Tag(name = "Authentication", description = "Gestion de l'authentification")
 public class AuthResource {
-    private final AuthService authService;
-
-    public AuthResource(AuthService authService) {
-        this.authService = authService;
-    }
+    private final AuthService authService = new AuthService();
 
     @POST
     @Path("/login")
     @Operation(summary = "Connexion utilisateur")
     @ApiResponses({
-            @ApiResponse(
-                    responseCode = "200",
-                    description = "User found",
-                    content = @Content(schema = @Schema(implementation = ResponseApi.class))
-            ),
-            @ApiResponse(
-                    responseCode = "404",
-                    description = "User not found",
-                    content = @Content(schema = @Schema(implementation = ResponseApi.class))
-            )
+            @ApiResponse(responseCode = "200", description = "Connexion réussie"),
+            @ApiResponse(responseCode = "401", description = "Email ou mot de passe incorrect")
     })
     public Response login(LoginRequest request) {
-        // Authentification email/password
-        AuthResponse auth = authService.authenticate(request);
-        return Response.ok(auth).build();
+        try {
+            AuthResponse auth = authService.authenticate(request);
+            ResponseApi<AuthResponse> response = new ResponseApi<>(auth);
+            return Response.ok(response).build();
+        } catch (Exception e) {
+            ResponseApi<String> errorResponse = new ResponseApi<>(e.getMessage());
+            return Response.status(Response.Status.UNAUTHORIZED).entity(errorResponse).build();
+        }
     }
 
     @POST
     @Path("/register")
     @Operation(summary = "Inscription utilisateur")
+    @ApiResponses({
+            @ApiResponse(responseCode = "201", description = "Utilisateur créé"),
+            @ApiResponse(responseCode = "400", description = "Email déjà utilisé")
+    })
     public Response register(RegisterRequest request) {
-        // Création user + hash password
-        AuthResponse auth = authService.register(request);
-        return Response.status(Response.Status.CREATED).entity(auth).build();
+        try {
+            AuthResponse auth = authService.register(request);
+            ResponseApi<AuthResponse> response = new ResponseApi<>(auth);
+            return Response.status(Response.Status.CREATED).entity(response).build();
+        } catch (Exception e) {
+            ResponseApi<String> errorResponse = new ResponseApi<>(e.getMessage());
+            return Response.status(Response.Status.BAD_REQUEST).entity(errorResponse).build();
+        }
     }
 
     @POST
     @Path("/refresh")
     @Operation(summary = "Rafraîchir le token")
-    public Response refreshToken(String request) {
-        // Générer nouveau token
-        AuthResponse auth = authService.refreshToken(request);
-        return Response.ok(auth).build();
+    public Response refreshToken(RefreshRequest request) {
+        try {
+            AuthResponse auth = authService.refreshToken(request);
+            ResponseApi<AuthResponse> response = new ResponseApi<>(auth);
+            return Response.ok(response).build();
+        } catch (Exception e) {
+            ResponseApi<String> errorResponse = new ResponseApi<>(e.getMessage());
+            return Response.status(Response.Status.UNAUTHORIZED).entity(errorResponse).build();
+        }
     }
 
     @POST
     @Path("/logout")
     @Operation(summary = "Déconnexion")
     public Response logout(@HeaderParam("Authorization") String token) {
-        // Invalider le token
-        authService.logout(token);
+        if (token != null && token.startsWith("Bearer ")) {
+            authService.logout(token.substring(7));
+        }
         return Response.noContent().build();
+    }
+
+    @POST
+    @Path("/forgot")
+    @Operation(summary = "Mot de passe oublié")
+    public Response forgotPassword(@QueryParam("email") String email) {
+        authService.forgotPassword(email);
+        ResponseApi<String> response = new ResponseApi<>("Si l'email existe, un lien de reset a été envoyé");
+        return Response.ok(response).build();
     }
 
     @POST
     @Path("/reset")
     @Operation(summary = "Réinitialiser mot de passe")
-    public Response resetPassword(Object request) {
-        // Reset avec token
-        authService.resetPassword(request);
-        return Response.ok().build();
+    public Response resetPassword(ResetPasswordRequest request) {
+        try {
+            authService.resetPassword(request);
+            ResponseApi<String> response = new ResponseApi<>("Mot de passe mis à jour avec succès");
+            return Response.ok(response).build();
+        } catch (Exception e) {
+            ResponseApi<String> errorResponse = new ResponseApi<>(e.getMessage());
+            return Response.status(Response.Status.BAD_REQUEST).entity(errorResponse).build();
+        }
     }
 }

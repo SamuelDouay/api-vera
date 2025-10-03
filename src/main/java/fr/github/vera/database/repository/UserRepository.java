@@ -25,17 +25,17 @@ public class UserRepository extends BaseRepository<User, Integer> implements IUs
 
     private User create(User user) {
         validateUserForCreation(user);
-        String sql = "INSERT INTO users (name, email) VALUES (?, ?)";
+        String sql = "INSERT INTO users (name, surname, email, role, password) VALUES (?, ?, ?, ?, ?)";
         Integer generatedId = executeUpdateWithGeneratedKeys(sql,
-                "CREATE USER", user.getName(), user.getEmail());
+                "CREATE USER", user.getName(), user.getSurname(), user.getEmail(), user.getRole(), user.getPassword());
         user.setId(generatedId);
         return user;
     }
 
 
     private User update(User user) {
-        String sql = "UPDATE users SET name = ?, surname = ?, email = ? WHERE id = ?";
-        executeUpdate(sql, "UPDATE USER", user.getName(), user.getSurname(), user.getEmail(), user.getId());
+        String sql = "UPDATE users SET name = ?, surname = ?, email = ?, password = ? WHERE id = ?";
+        executeUpdate(sql, "UPDATE USER", user.getName(), user.getSurname(), user.getEmail(), user.getPassword(), user.getId());
         return user;
     }
 
@@ -51,7 +51,9 @@ public class UserRepository extends BaseRepository<User, Integer> implements IUs
                 rs.getInt("id"),
                 rs.getString("name"),
                 rs.getString("surname"),
-                rs.getString("email")
+                rs.getString("email"),
+                rs.getString("role"),
+                rs.getString("password")
         );
     }
 
@@ -69,16 +71,6 @@ public class UserRepository extends BaseRepository<User, Integer> implements IUs
     public Optional<User> findByEmail(String email) {
         String sql = "SELECT * FROM users WHERE email = ?";
         return executeQueryWithParams(sql, rs -> rs.next() ? Optional.of(mapResultSet(rs)) : Optional.empty(), Optional.empty(), "FIND USER BY EMAIL", email);
-    }
-
-    @Override
-    public boolean existsByEmail(String email) {
-        return false;
-    }
-
-    @Override
-    public List<User> findByRole(String role) {
-        return List.of();
     }
 
     private void validateUserForCreation(User user) {

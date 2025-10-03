@@ -13,37 +13,37 @@ public class SwaggerUIResource {
     @Produces(MediaType.TEXT_HTML)
     public Response getSwaggerUI() {
         String html = """
-            <!DOCTYPE html>
-            <html>
-            <head>
-                <title>VERA API - Documentation</title>
-                <link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/swagger-ui-dist@5.9.0/swagger-ui.css" />
-                <style>
-                    html { box-sizing: border-box; overflow-y: scroll; }
-                    body { margin: 0; background: #fafafa; }
-                </style>
-            </head>
-            <body>
-                <div id="swagger-ui"></div>
-                <script src="https://cdn.jsdelivr.net/npm/swagger-ui-dist@5.9.0/swagger-ui-bundle.js"></script>
-                <script>
-                    window.onload = function() {
-                        window.ui = SwaggerUIBundle({
-                            url: '/api/openapi.json',
-                            dom_id: '#swagger-ui',
-                            deepLinking: true,
-                            presets: [
-                                SwaggerUIBundle.presets.apis,
-                                SwaggerUIBundle.presets.standalone
-                            ],
-                            displayRequestDuration: true,
-                            filter: true
-                        });
-                    };
-                </script>
-            </body>
-            </html>
-            """;
+                <!DOCTYPE html>
+                <html>
+                <head>
+                    <title>VERA API - Documentation</title>
+                    <link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/swagger-ui-dist@5.9.0/swagger-ui.css" />
+                    <style>
+                        html { box-sizing: border-box; overflow-y: scroll; }
+                        body { margin: 0; background: #fafafa; }
+                    </style>
+                </head>
+                <body>
+                    <div id="swagger-ui"></div>
+                    <script src="https://cdn.jsdelivr.net/npm/swagger-ui-dist@5.9.0/swagger-ui-bundle.js"></script>
+                    <script>
+                        window.onload = function() {
+                            window.ui = SwaggerUIBundle({
+                                url: '/api/openapi.json',
+                                dom_id: '#swagger-ui',
+                                deepLinking: true,
+                                presets: [
+                                    SwaggerUIBundle.presets.apis,
+                                    SwaggerUIBundle.presets.standalone
+                                ],
+                                displayRequestDuration: true,
+                                filter: true
+                            });
+                        };
+                    </script>
+                </body>
+                </html>
+                """;
         return Response.ok(html).build();
     }
 }

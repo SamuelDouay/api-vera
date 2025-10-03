@@ -13,9 +13,9 @@ import java.util.Map;
 
 public class JwtService {
     private static final String SECRET = "Vahgtjj8PN2cFjtEfxkm6QvIid4acyrGPB+N60dG6Wo5l9Rd7Wjnc+OnIokMoyoWh++YJZKzg1CsE2fabQ+Hlc1JEB09FBua";
+    private static final long accessTokenValidity = 3600000; // 1 heure
+    private static final long refreshTokenValidity = 604800000; // 7 jours
     private final SecretKey secretKey;
-    private final long accessTokenValidity = 3600000; // 1 heure
-    private final long refreshTokenValidity = 604800000; // 7 jours
 
     public JwtService() {
         this.secretKey = Keys.hmacShaKeyFor(SECRET.getBytes());

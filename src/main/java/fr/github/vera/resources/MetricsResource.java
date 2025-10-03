@@ -1,7 +1,7 @@
 package fr.github.vera.resources;
 
 import com.codahale.metrics.MetricRegistry;
-import fr.github.vera.services.UserService;
+import fr.github.vera.filters.Public;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.Produces;
@@ -16,6 +16,7 @@ import java.util.Map;
 public class MetricsResource {
 
     @GET
+    @Public
     public Response getMetrics() {
         MetricRegistry metrics = new MetricRegistry();
         Map<String, Object> metricsData = new HashMap<>();

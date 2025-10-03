@@ -1,5 +1,7 @@
 package fr.github.vera.resources;
 
+import fr.github.vera.filters.Public;
+import fr.github.vera.filters.Secured;
 import fr.github.vera.model.*;
 import fr.github.vera.services.AuthService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -18,6 +20,7 @@ public class AuthResource {
     private final AuthService authService = new AuthService();
 
     @POST
+    @Public
     @Path("/login")
     @Operation(summary = "Connexion utilisateur")
     @ApiResponses({
@@ -36,6 +39,7 @@ public class AuthResource {
     }
 
     @POST
+    @Public
     @Path("/register")
     @Operation(summary = "Inscription utilisateur")
     @ApiResponses({
@@ -69,6 +73,7 @@ public class AuthResource {
 
     @POST
     @Path("/logout")
+    @Secured(roles = {"admin", "user"})
     @Operation(summary = "Déconnexion")
     public Response logout(@HeaderParam("Authorization") String token) {
         if (token != null && token.startsWith("Bearer ")) {
@@ -78,6 +83,7 @@ public class AuthResource {
     }
 
     @POST
+    @Public
     @Path("/forgot")
     @Operation(summary = "Mot de passe oublié")
     public Response forgotPassword(@QueryParam("email") String email) {
@@ -87,6 +93,7 @@ public class AuthResource {
     }
 
     @POST
+    @Public
     @Path("/reset")
     @Operation(summary = "Réinitialiser mot de passe")
     public Response resetPassword(ResetPasswordRequest request) {

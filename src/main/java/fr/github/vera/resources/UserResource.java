@@ -1,5 +1,6 @@
 package fr.github.vera.resources;
 
+import fr.github.vera.filters.Secured;
 import fr.github.vera.model.ResponseApi;
 import fr.github.vera.model.User;
 import fr.github.vera.services.UserService;
@@ -8,7 +9,6 @@ import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
-import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.ConstraintViolationException;
 import jakarta.validation.Valid;
@@ -32,8 +32,7 @@ public class UserResource {
     @GET
     @Operation(
             summary = "Récupérer tous les utilisateurs",
-            description = "Retourne la liste de tous les utilisateurs",
-            security = @SecurityRequirement(name = "BearerAuth"))
+            description = "Retourne la liste de tous les utilisateurs")
     @ApiResponse(
             responseCode = "200",
             description = "Users retrieved successfully",
@@ -68,6 +67,7 @@ public class UserResource {
 
     @GET
     @Path("/{id}")
+    @Secured(roles = {"admin", "user"})
     @Operation(
             summary = "Récupérer un utilisateur par ID",
             description = "Retourne un utilisateur spécifique par son ID"
@@ -106,6 +106,7 @@ public class UserResource {
 
     @GET
     @Path("/email")
+    @Secured(roles = {"admin", "user"})
     @Operation(
             summary = "Récupérer un utilisateur par email",
             description = "Retourne un utilisateur spécifique par son email"
@@ -162,6 +163,7 @@ public class UserResource {
 
     @GET
     @Path("/count")
+    @Secured(roles = {"admin"})
     @Operation(
             summary = "Récupérer le nombre total d'utilisateurs",
             description = "Retourne le nombre total d'utilisateur"
@@ -180,10 +182,10 @@ public class UserResource {
     }
 
     @POST
+    @Secured(roles = {"admin", "user"})
     @Operation(
             summary = "Créer un nouvel utilisateur",
-            description = "Crée un nouvel utilisateur avec les données fournies",
-            security = @SecurityRequirement(name = "BasicAuth")
+            description = "Crée un nouvel utilisateur avec les données fournies"
     )
     @ApiResponses({
             @ApiResponse(
@@ -227,6 +229,7 @@ public class UserResource {
 
     @PUT
     @Path("/{id}")
+    @Secured(roles = {"admin", "user"})
     @Operation(
             summary = "Mettre à jour un utilisateur",
             description = "Met à jour un utilisateur existant"
@@ -284,6 +287,7 @@ public class UserResource {
 
     @DELETE
     @Path("/{id}")
+    @Secured(roles = {"admin"})
     @Operation(
             summary = "Supprimer un utilisateur",
             description = "Supprime un utilisateur par son ID"

@@ -1,6 +1,5 @@
 package fr.github.vera.config;
 
-import fr.github.vera.filters.CorsFilter;
 import fr.github.vera.resources.SwaggerUIResource;
 import io.swagger.v3.jaxrs2.integration.JaxrsOpenApiContextBuilder;
 import io.swagger.v3.jaxrs2.integration.resources.OpenApiResource;
@@ -22,7 +21,7 @@ public class JerseyConfig extends ResourceConfig {
         packages("fr.github.vera.resources");
 
         // Register filters and exception mappers
-        register(CorsFilter.class);
+        packages("fr.github.vera.filters");
         packages("fr.github.vera.exception");
 
         // Configure Swagger

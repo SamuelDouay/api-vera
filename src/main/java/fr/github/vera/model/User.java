@@ -1,5 +1,6 @@
 package fr.github.vera.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
@@ -19,6 +20,7 @@ public class User {
     @Email(message = "email should be valid")
     private String email;
     private String role;
+    @JsonIgnore
     private String password;
 
     // Constructeurs

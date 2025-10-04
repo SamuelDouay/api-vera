@@ -17,15 +17,21 @@ import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.SecurityContext;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import java.net.URI;
-import java.util.*;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 
 @Path("/users")
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)
 @Tag(name = "Users", description = "Gestion des utilisateurs")
 public class UserResource {
+    private static final Logger log = LogManager.getLogger(UserResource.class);
     private final UserService userService = new UserService();
 
     @GET
@@ -74,30 +80,10 @@ public class UserResource {
             )
     })
     public Response getUserById(@PathParam("id") Integer id, @Context SecurityContext securityContext) {
-        
-        if (id == null || id <= 0) {
-            ResponseApi<String> errorResponse = new ResponseApi<>("Invalid user ID: must be a positive integer");
-            return Response.status(Response.Status.BAD_REQUEST)
-                    .entity(errorResponse)
-                    .build();
-        }
 
-        String currentUserEmail = securityContext.getUserPrincipal().getName();
-        Optional<User> currentUserOpt = userService.getUserByEmail(currentUserEmail);
-
-        if (currentUserOpt.isEmpty()) {
-            ResponseApi<String> errorResponse = new ResponseApi<>("Current user not found");
-            return Response.status(Response.Status.UNAUTHORIZED).entity(errorResponse).build();
-        }
-
-        User currentUser = currentUserOpt.get();
-        boolean isAdmin = securityContext.isUserInRole("admin");
-        boolean isOwnProfile = currentUser.getId().equals(id);
-
-        // User normal ne peut voir que son propre profil
-        if (!isAdmin && !isOwnProfile) {
-            ResponseApi<String> errorResponse = new ResponseApi<>("Access denied - you can only view your own profile");
-            return Response.status(Response.Status.FORBIDDEN).entity(errorResponse).build();
+        Response validationResponse = validateUserAccess(id, securityContext, null);
+        if (validationResponse != null) {
+            return validationResponse;
         }
 
         Optional<User> user = userService.getUserById(id);
@@ -107,6 +93,93 @@ public class UserResource {
             return Response.ok(response).build();
         } else {
             ResponseApi<String> errorResponse = new ResponseApi<>("User not found with ID: " + id);
+            return Response.status(Response.Status.NOT_FOUND)
+                    .entity(errorResponse)
+                    .build();
+        }
+    }
+
+    @PUT
+    @Path("/{id}")
+    @Secured(roles = {"admin", "user"})
+    @Operation(
+            summary = "Mettre à jour un utilisateur",
+            description = "Met à jour un utilisateur existant"
+    )
+    @ApiResponses({
+            @ApiResponse(
+                    responseCode = "200",
+                    description = "User updated successfully",
+                    content = @Content(schema = @Schema(implementation = ResponseApi.class))
+            ),
+            @ApiResponse(
+                    responseCode = "404",
+                    description = "User not found",
+                    content = @Content(schema = @Schema(implementation = ResponseApi.class))
+            )
+    })
+    public Response updateUser(@PathParam("id") Integer id, @Valid User user, @Context SecurityContext securityContext) {
+        try {
+            Response validationResponse = validateUserAccess(id, securityContext, user);
+            if (validationResponse != null) {
+                return validationResponse;
+            }
+            User updatedUser = userService.updateUser(id, user);
+
+            if (updatedUser != null) {
+                ResponseApi<User> response = new ResponseApi<>(updatedUser);
+                return Response.ok(response).build();
+            } else {
+                ResponseApi<String> errorResponse = new ResponseApi<>("User not found");
+                return Response.status(Response.Status.NOT_FOUND)
+                        .entity(errorResponse)
+                        .build();
+            }
+        } catch (ConstraintViolationException e) {
+            ResponseApi<String> errorResponse = new ResponseApi<>(e.getMessage());
+            return Response.status(Response.Status.BAD_REQUEST)
+                    .entity(errorResponse)
+                    .build();
+        } catch (Exception e) {
+            ResponseApi<String> errorResponse = new ResponseApi<>("Failed to update user: " + e.getMessage());
+            return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
+                    .entity(errorResponse)
+                    .build();
+        }
+    }
+
+    @DELETE
+    @Path("/{id}")
+    @Secured(roles = {"admin"})
+    @Operation(
+            summary = "Supprimer un utilisateur",
+            description = "Supprime un utilisateur par son ID"
+    )
+    @ApiResponses({
+            @ApiResponse(
+                    responseCode = "204",
+                    description = "User deleted successfully"
+            ),
+            @ApiResponse(
+                    responseCode = "404",
+                    description = "User not found",
+                    content = @Content(schema = @Schema(implementation = ResponseApi.class))
+            )
+    })
+    public Response deleteUser(@PathParam("id") Integer id) {
+        if (id == null || id <= 0) {
+            ResponseApi<String> errorResponse = new ResponseApi<>("Invalid user ID");
+            return Response.status(Response.Status.BAD_REQUEST)
+                    .entity(errorResponse)
+                    .build();
+        }
+
+
+        boolean deleted = userService.deleteUser(id);
+        if (deleted) {
+            return Response.noContent().build();
+        } else {
+            ResponseApi<String> errorResponse = new ResponseApi<>("User not found");
             return Response.status(Response.Status.NOT_FOUND)
                     .entity(errorResponse)
                     .build();
@@ -241,126 +314,6 @@ public class UserResource {
         }
     }
 
-    @PUT
-    @Path("/{id}")
-    @Secured(roles = {"admin", "user"})
-    @Operation(
-            summary = "Mettre à jour un utilisateur",
-            description = "Met à jour un utilisateur existant"
-    )
-    @ApiResponses({
-            @ApiResponse(
-                    responseCode = "200",
-                    description = "User updated successfully",
-                    content = @Content(schema = @Schema(implementation = ResponseApi.class))
-            ),
-            @ApiResponse(
-                    responseCode = "404",
-                    description = "User not found",
-                    content = @Content(schema = @Schema(implementation = ResponseApi.class))
-            )
-    })
-    public Response updateUser(@PathParam("id") Integer id, @Valid User user, @Context SecurityContext securityContext) {
-        try {
-            if (id == null || id <= 0) {
-                ResponseApi<String> errorResponse = new ResponseApi<>("Invalid user ID");
-                return Response.status(Response.Status.BAD_REQUEST)
-                        .entity(errorResponse)
-                        .build();
-            }
-
-            if (!isValidEmailFormat(user.getEmail())) {
-                ResponseApi<String> errorResponse = new ResponseApi<>("Invalid email format");
-                return Response.status(Response.Status.BAD_REQUEST)
-                        .entity(errorResponse)
-                        .build();
-            }
-
-            // Vérifier les permissions
-            String currentUserEmail = securityContext.getUserPrincipal().getName();
-            Optional<User> currentUserOpt = userService.getUserByEmail(currentUserEmail);
-
-            if (currentUserOpt.isEmpty()) {
-                ResponseApi<String> errorResponse = new ResponseApi<>("Current user not found");
-                return Response.status(Response.Status.UNAUTHORIZED).entity(errorResponse).build();
-            }
-
-            User currentUser = currentUserOpt.get();
-            boolean isAdmin = securityContext.isUserInRole("admin");
-            boolean isOwnProfile = currentUser.getId().equals(id);
-
-            // User normal ne peut modifier que son propre profil
-            if (!isAdmin && !isOwnProfile) {
-                ResponseApi<String> errorResponse = new ResponseApi<>("Access denied - you can only update your own profile");
-                return Response.status(Response.Status.FORBIDDEN).entity(errorResponse).build();
-            }
-
-            if (!isAdmin && user.getRole() != null && !user.getRole().equals(currentUser.getRole())) {
-                ResponseApi<String> errorResponse = new ResponseApi<>("Access denied - you cannot change your role");
-                return Response.status(Response.Status.FORBIDDEN).entity(errorResponse).build();
-            }
-
-
-            User updatedUser = userService.updateUser(id, user);
-            if (updatedUser != null) {
-                ResponseApi<User> response = new ResponseApi<>(updatedUser);
-                return Response.ok(response).build();
-            } else {
-                ResponseApi<String> errorResponse = new ResponseApi<>("User not found");
-                return Response.status(Response.Status.NOT_FOUND)
-                        .entity(errorResponse)
-                        .build();
-            }
-        } catch (ConstraintViolationException e) {
-            ResponseApi<String> errorResponse = new ResponseApi<>(e.getMessage());
-            return Response.status(Response.Status.BAD_REQUEST)
-                    .entity(errorResponse)
-                    .build();
-        } catch (Exception e) {
-            ResponseApi<String> errorResponse = new ResponseApi<>("Failed to update user: " + e.getMessage());
-            return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
-                    .entity(errorResponse)
-                    .build();
-        }
-    }
-
-    @DELETE
-    @Path("/{id}")
-    @Secured(roles = {"admin"})
-    @Operation(
-            summary = "Supprimer un utilisateur",
-            description = "Supprime un utilisateur par son ID"
-    )
-    @ApiResponses({
-            @ApiResponse(
-                    responseCode = "204",
-                    description = "User deleted successfully"
-            ),
-            @ApiResponse(
-                    responseCode = "404",
-                    description = "User not found",
-                    content = @Content(schema = @Schema(implementation = ResponseApi.class))
-            )
-    })
-    public Response deleteUser(@PathParam("id") Integer id) {
-        if (id == null || id <= 0) {
-            ResponseApi<String> errorResponse = new ResponseApi<>("Invalid user ID");
-            return Response.status(Response.Status.BAD_REQUEST)
-                    .entity(errorResponse)
-                    .build();
-        }
-
-        boolean deleted = userService.deleteUser(id);
-        if (deleted) {
-            return Response.noContent().build();
-        } else {
-            ResponseApi<String> errorResponse = new ResponseApi<>("User not found");
-            return Response.status(Response.Status.NOT_FOUND)
-                    .entity(errorResponse)
-                    .build();
-        }
-    }
-
     private List<User> applyPagination(List<User> users, int limit, int offset) {
         int start = Math.min(offset, users.size());
         int end = Math.min(start + limit, users.size());
@@ -381,23 +334,49 @@ public class UserResource {
         return email.matches(emailRegex);
     }
 
-    private List<String> extractRoles(SecurityContext securityContext) {
-        List<String> roles = new ArrayList<>();
-        if (securityContext.isUserInRole("admin")) roles.add("admin");
-        if (securityContext.isUserInRole("user")) roles.add("user");
-        return roles;
-    }
+    private Response validateUserAccess(Integer id, SecurityContext securityContext, User user) {
+        boolean isAdmin = securityContext.isUserInRole("admin");
 
-    private void validateId(Integer id) {
         if (id == null || id <= 0) {
-            throw new IllegalArgumentException("Invalid user ID: must be a positive integer");
+            ResponseApi<String> errorResponse = new ResponseApi<>("Invalid user ID: must be a positive integer");
+            return Response.status(Response.Status.BAD_REQUEST)
+                    .entity(errorResponse)
+                    .build();
         }
-    }
 
-    private void validateEmail(String email) {
-        if (email == null || email.isBlank()) {
-            throw new IllegalArgumentException("Email parameter is required and cannot be empty");
+        String currentUserEmail = securityContext.getUserPrincipal().getName();
+        Optional<User> currentUserOpt = userService.getUserByEmail(currentUserEmail);
+
+        // Ajout d'une vérification pour éviter NoSuchElementException
+        if (currentUserOpt.isEmpty()) {
+            ResponseApi<String> errorResponse = new ResponseApi<>("Current user not found");
+            return Response.status(Response.Status.UNAUTHORIZED).entity(errorResponse).build();
         }
+
+        User currentUser = currentUserOpt.get();
+
+        if (!isAdmin) {
+            if (!currentUser.getId().equals(id)) {
+                ResponseApi<String> errorResponse = new ResponseApi<>("Access denied - you can only view your own profile");
+                return Response.status(Response.Status.FORBIDDEN).entity(errorResponse).build();
+            }
+            if (user != null) {
+                if (user.getRole() != null && !user.getRole().equals(currentUser.getRole())) {
+                    ResponseApi<String> errorResponse = new ResponseApi<>("Access denied - you cannot change your role");
+                    return Response.status(Response.Status.FORBIDDEN).entity(errorResponse).build();
+                }
+
+                if (!isValidEmailFormat(user.getEmail())) {
+                    ResponseApi<String> errorResponse = new ResponseApi<>("Invalid email format");
+                    return Response.status(Response.Status.BAD_REQUEST)
+                            .entity(errorResponse)
+                            .build();
+                }
+            }
+        }
+
+
+        return null; // Aucune erreur, validation réussie
     }
 
 }

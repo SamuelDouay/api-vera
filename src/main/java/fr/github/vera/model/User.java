@@ -87,7 +87,7 @@ public class User {
 
     @Override
     public String toString() {
-        return String.format("User{id=%d, name='%s', email='%s'}",
-                id, name, email);
+        return String.format("User{id=%d, name='%s', email='%s', role='%s'}",
+                id, name, email, role);
     }
 }

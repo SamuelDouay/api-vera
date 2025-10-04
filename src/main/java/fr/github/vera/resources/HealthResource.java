@@ -1,6 +1,6 @@
 package fr.github.vera.resources;
 
-import fr.github.vera.filters.Public;
+import fr.github.vera.filters.Secured;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.ws.rs.GET;
@@ -19,7 +19,7 @@ import java.util.Map;
 public class HealthResource {
 
     @GET
-    @Public
+    @Secured(roles = {"admin"})
     @Operation(summary = "Vérifier l'état de santé de l'application")
     public Response healthCheck() {
         Map<String, Object> health = new HashMap<>();

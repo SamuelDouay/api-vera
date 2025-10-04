@@ -62,10 +62,6 @@ public class JwtService {
         return validateToken(token).getSubject();
     }
 
-    public Integer getUserIdFromToken(String token) {
-        return validateToken(token).get("userId", Integer.class);
-    }
-
     public boolean isTokenExpired(String token) {
         try {
             return validateToken(token).getExpiration().before(new Date());

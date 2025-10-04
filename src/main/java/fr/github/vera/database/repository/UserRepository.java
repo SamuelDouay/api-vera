@@ -1,5 +1,6 @@
 package fr.github.vera.database.repository;
 
+import fr.github.vera.database.DynamicUpdateBuilder;
 import fr.github.vera.model.User;
 
 import java.sql.ResultSet;
@@ -34,8 +35,17 @@ public class UserRepository extends BaseRepository<User, Integer> implements IUs
 
 
     private User update(User user) {
-        String sql = "UPDATE users SET name = ?, surname = ?, email = ?, password = ? WHERE id = ?";
-        executeUpdate(sql, "UPDATE USER", user.getName(), user.getSurname(), user.getEmail(), user.getPassword(), user.getId());
+        DynamicUpdateBuilder builder = new DynamicUpdateBuilder("users")
+                .set("name", user.getName())
+                .set("surname", user.getSurname())
+                .set("email", user.getEmail())
+                .set("password", user.getPassword())
+                .set("role", user.getRole())
+                .where("id = ?", user.getId());
+        
+        if (builder.hasUpdates()) {
+            executeUpdate(builder.buildSql(), "UPDATE USER", builder.buildParams());
+        }
         return user;
     }
 

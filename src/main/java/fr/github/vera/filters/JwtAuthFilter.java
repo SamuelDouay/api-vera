@@ -30,7 +30,6 @@ public class JwtAuthFilter implements ContainerRequestFilter {
         if (isPublicEndpoint() || isPublicPath(requestContext)) {
             return;
         }
-
         // Extraire le token JWT
         String authHeader = requestContext.getHeaderString(HttpHeaders.AUTHORIZATION);
         if (authHeader == null || !authHeader.startsWith("Bearer ")) {
@@ -48,20 +47,11 @@ public class JwtAuthFilter implements ContainerRequestFilter {
             Integer userId = claims.get("userId", Integer.class);
 
             // Définir le contexte de sécurité
-            requestContext.setSecurityContext(createSecurityContext(email, role, userId));
+            requestContext.setSecurityContext(createSecurityContext(email, role));
 
         } catch (Exception e) {
             abortWithUnauthorized(requestContext, "Token JWT invalide: " + e.getMessage());
         }
-    }
-
-    private boolean isPublicEndpoint(String path, String method) {
-        // Endpoints publics
-        return (path.equals("auth/login") && method.equals("POST")) ||
-                (path.equals("auth/forgot") && method.equals("POST")) ||
-                (path.equals("auth/register") && method.equals("POST")) ||
-                (path.equals("auth/reset") && method.equals("POST")) ||
-                (path.startsWith("swagger") || path.startsWith("openapi")); // Documentation
     }
 
     private boolean isPublicEndpoint() {
@@ -82,7 +72,7 @@ public class JwtAuthFilter implements ContainerRequestFilter {
         return path.startsWith("swagger") || path.startsWith("openapi");
     }
 
-    private SecurityContext createSecurityContext(String email, String role, Integer userId) {
+    private SecurityContext createSecurityContext(String email, String role) {
         return new SecurityContext() {
             @Override
             public Principal getUserPrincipal() {

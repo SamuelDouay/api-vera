@@ -1,10 +1,12 @@
 package fr.github.vera.model;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
 import io.swagger.v3.oas.annotations.media.Schema;
 
 import java.util.Map;
 
 @Schema(description = "Réponse API générique")
+@JsonInclude(JsonInclude.Include.NON_NULL)
 public class ResponseApi<T> {
     @Schema(description = "Donnée de la réponse", example = "Opération réussie")
     private final T data;

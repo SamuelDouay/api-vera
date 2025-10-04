@@ -26,17 +26,14 @@ public class AuthService {
         // 1. Trouver l'utilisateur par email
         Optional<User> userOpt = userRepository.findByEmail(request.getEmail());
         if (userOpt.isEmpty()) {
-            throw new RuntimeException("Email ou mot de passe incorrect");
+            throw new RuntimeException("Email incorrect");
         }
 
-        log.info(userOpt);
         User user = userOpt.get();
-        log.info(user);
-        log.info(user.getPassword());
 
         // 2. Vérifier le mot de passe
         if (!passwordEncoder.verifyPassword(request.getPassword(), user.getPassword())) {
-            throw new RuntimeException("Email ou mot de passe incorrect");
+            throw new RuntimeException("Mot de passe incorrect");
         }
 
         // 3. Générer les tokens
@@ -94,20 +91,15 @@ public class AuthService {
     }
 
     public void logout(String token) {
-        // Pour un système stateless JWT, on ne fait rien côté serveur
-        // Le token sera simplement ignoré côté client
-        // Pour un système plus avancé, on pourrait blacklister le token
-        System.out.println("Utilisateur déconnecté - Token: " + token.substring(0, 20) + "...");
+        log.info("Utilisateur déconnecté - Token: {}...", token.substring(0, 20));
     }
 
     public void forgotPassword(String email) {
         // Implémentation basique - envoi d'email à faire
         Optional<User> userOpt = userRepository.findByEmail(email);
         if (userOpt.isPresent()) {
-            // Générer un token de reset et envoyer un email
             System.out.println("Email de reset envoyé à: " + email);
         } else {
-            // Ne pas révéler que l'email n'existe pas
             System.out.println("Si l'email existe, un lien de reset a été envoyé");
         }
     }
@@ -117,7 +109,7 @@ public class AuthService {
         // 2. Trouver l'utilisateur
         Optional<User> userOpt = userRepository.findByEmail(request.getEmail());
         if (userOpt.isEmpty()) {
-            throw new RuntimeException("Utilisateur non trouvé");
+            throw new RuntimeException("Email incorrect");
         }
 
         User user = userOpt.get();

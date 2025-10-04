@@ -39,3 +39,7 @@ VALUES  ('John', 'Doe', 'john.doe@example.com', '$argon2id$v=19$m=65536,t=10,p=1
         ('Alice', 'Johnson', 'alice.johnson@example.com', '$argon2id$v=19$m=65536,t=10,p=1$Q2+UgerwZFJyMGC/P6O6fQ$Wq+arapkagYKmHZOeAmEvnCO3h7F8zKQaRU1gilEbOc'),
         ('Charlie', 'Brown', 'charlie.brown@example.com', '$argon2id$v=19$m=65536,t=10,p=1$Q2+UgerwZFJyMGC/P6O6fQ$Wq+arapkagYKmHZOeAmEvnCO3h7F8zKQaRU1gilEbOc')
 ON CONFLICT (email) DO NOTHING;
+
+INSERT INTO users (name, surname, email, role, password)
+VALUES  ('Admin', 'Akadmin', 'admin@example.com', 'admin', '$argon2id$v=19$m=65536,t=10,p=1$Q2+UgerwZFJyMGC/P6O6fQ$Wq+arapkagYKmHZOeAmEvnCO3h7F8zKQaRU1gilEbOc')
+ON CONFLICT (email) DO NOTHING;

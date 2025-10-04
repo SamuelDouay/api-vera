@@ -13,14 +13,13 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.ConstraintViolationException;
 import jakarta.validation.Valid;
 import jakarta.ws.rs.*;
+import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
+import jakarta.ws.rs.core.SecurityContext;
 
 import java.net.URI;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
 
 @Path("/users")
 @Produces(MediaType.APPLICATION_JSON)
@@ -30,6 +29,7 @@ public class UserResource {
     private final UserService userService = new UserService();
 
     @GET
+    @Secured(roles = {"admin"})
     @Operation(
             summary = "Récupérer tous les utilisateurs",
             description = "Retourne la liste de tous les utilisateurs")
@@ -42,19 +42,8 @@ public class UserResource {
                                 @QueryParam("offset") @DefaultValue("0") int offset) {
         try {
             List<User> users = userService.getAllUsers(limit, offset);
-
-            // Pagination
-            int start = Math.min(offset, users.size());
-            int end = Math.min(start + limit, users.size());
-            List<User> paginatedUsers = users.subList(start, end);
-
-            // Metadata pour la pagination
-            Map<String, Object> meta = new HashMap<>();
-            meta.put("total", users.size());
-            meta.put("offset", offset);
-            meta.put("limit", limit);
-            meta.put("returned", paginatedUsers.size());
-
+            List<User> paginatedUsers = applyPagination(users, limit, offset);
+            Map<String, Object> meta = createPaginationMeta(users.size(), offset, limit, paginatedUsers.size());
             ResponseApi<List<User>> response = new ResponseApi<>(paginatedUsers, meta);
             return Response.ok(response).build();
         } catch (Exception e) {
@@ -84,7 +73,8 @@ public class UserResource {
                     content = @Content(schema = @Schema(implementation = ResponseApi.class))
             )
     })
-    public Response getUserById(@PathParam("id") Integer id) {
+    public Response getUserById(@PathParam("id") Integer id, @Context SecurityContext securityContext) {
+        
         if (id == null || id <= 0) {
             ResponseApi<String> errorResponse = new ResponseApi<>("Invalid user ID: must be a positive integer");
             return Response.status(Response.Status.BAD_REQUEST)
@@ -92,7 +82,26 @@ public class UserResource {
                     .build();
         }
 
+        String currentUserEmail = securityContext.getUserPrincipal().getName();
+        Optional<User> currentUserOpt = userService.getUserByEmail(currentUserEmail);
+
+        if (currentUserOpt.isEmpty()) {
+            ResponseApi<String> errorResponse = new ResponseApi<>("Current user not found");
+            return Response.status(Response.Status.UNAUTHORIZED).entity(errorResponse).build();
+        }
+
+        User currentUser = currentUserOpt.get();
+        boolean isAdmin = securityContext.isUserInRole("admin");
+        boolean isOwnProfile = currentUser.getId().equals(id);
+
+        // User normal ne peut voir que son propre profil
+        if (!isAdmin && !isOwnProfile) {
+            ResponseApi<String> errorResponse = new ResponseApi<>("Access denied - you can only view your own profile");
+            return Response.status(Response.Status.FORBIDDEN).entity(errorResponse).build();
+        }
+
         Optional<User> user = userService.getUserById(id);
+
         if (user.isPresent()) {
             ResponseApi<User> response = new ResponseApi<>(user.get());
             return Response.ok(response).build();
@@ -128,7 +137,7 @@ public class UserResource {
                     content = @Content(schema = @Schema(implementation = ResponseApi.class))
             )
     })
-    public Response getUserByEmail(@QueryParam("email") String email) {
+    public Response getUserByEmail(@QueryParam("email") String email, @Context SecurityContext securityContext) {
         if (email == null || email.isBlank()) {
             ResponseApi<String> errorResponse = new ResponseApi<>("Email parameter is required and cannot be empty");
             return Response.status(Response.Status.BAD_REQUEST)
@@ -143,6 +152,16 @@ public class UserResource {
                     .build();
         }
 
+        String currentUserEmail = securityContext.getUserPrincipal().getName();
+        boolean isAdmin = securityContext.isUserInRole("admin");
+        boolean isOwnProfile = currentUserEmail.equals(email);
+
+        // User normal ne peut chercher que son propre email
+        if (!isAdmin && !isOwnProfile) {
+            ResponseApi<String> errorResponse = new ResponseApi<>("Access denied - you can only search your own email");
+            return Response.status(Response.Status.FORBIDDEN).entity(errorResponse).build();
+        }
+
 
         Optional<User> user = userService.getUserByEmail(email);
         if (user.isPresent()) {
@@ -154,11 +173,6 @@ public class UserResource {
                     .entity(errorResponse)
                     .build();
         }
-    }
-
-    private boolean isValidEmailFormat(String email) {
-        String emailRegex = "^[A-Za-z0-9+_.-]+@(.+)$";
-        return email.matches(emailRegex);
     }
 
     @GET
@@ -182,7 +196,7 @@ public class UserResource {
     }
 
     @POST
-    @Secured(roles = {"admin", "user"})
+    @Secured(roles = {"admin"})
     @Operation(
             summary = "Créer un nouvel utilisateur",
             description = "Crée un nouvel utilisateur avec les données fournies"
@@ -246,7 +260,7 @@ public class UserResource {
                     content = @Content(schema = @Schema(implementation = ResponseApi.class))
             )
     })
-    public Response updateUser(@PathParam("id") Integer id, @Valid User user) {
+    public Response updateUser(@PathParam("id") Integer id, @Valid User user, @Context SecurityContext securityContext) {
         try {
             if (id == null || id <= 0) {
                 ResponseApi<String> errorResponse = new ResponseApi<>("Invalid user ID");
@@ -261,6 +275,31 @@ public class UserResource {
                         .entity(errorResponse)
                         .build();
             }
+
+            // Vérifier les permissions
+            String currentUserEmail = securityContext.getUserPrincipal().getName();
+            Optional<User> currentUserOpt = userService.getUserByEmail(currentUserEmail);
+
+            if (currentUserOpt.isEmpty()) {
+                ResponseApi<String> errorResponse = new ResponseApi<>("Current user not found");
+                return Response.status(Response.Status.UNAUTHORIZED).entity(errorResponse).build();
+            }
+
+            User currentUser = currentUserOpt.get();
+            boolean isAdmin = securityContext.isUserInRole("admin");
+            boolean isOwnProfile = currentUser.getId().equals(id);
+
+            // User normal ne peut modifier que son propre profil
+            if (!isAdmin && !isOwnProfile) {
+                ResponseApi<String> errorResponse = new ResponseApi<>("Access denied - you can only update your own profile");
+                return Response.status(Response.Status.FORBIDDEN).entity(errorResponse).build();
+            }
+
+            if (!isAdmin && user.getRole() != null && !user.getRole().equals(currentUser.getRole())) {
+                ResponseApi<String> errorResponse = new ResponseApi<>("Access denied - you cannot change your role");
+                return Response.status(Response.Status.FORBIDDEN).entity(errorResponse).build();
+            }
+
 
             User updatedUser = userService.updateUser(id, user);
             if (updatedUser != null) {
@@ -319,6 +358,45 @@ public class UserResource {
             return Response.status(Response.Status.NOT_FOUND)
                     .entity(errorResponse)
                     .build();
+        }
+    }
+
+    private List<User> applyPagination(List<User> users, int limit, int offset) {
+        int start = Math.min(offset, users.size());
+        int end = Math.min(start + limit, users.size());
+        return users.subList(start, end);
+    }
+
+    private Map<String, Object> createPaginationMeta(int total, int offset, int limit, int returned) {
+        Map<String, Object> meta = new HashMap<>();
+        meta.put("total", total);
+        meta.put("offset", offset);
+        meta.put("limit", limit);
+        meta.put("returned", returned);
+        return meta;
+    }
+
+    private boolean isValidEmailFormat(String email) {
+        String emailRegex = "^[A-Za-z0-9+_.-]+@(.+)$";
+        return email.matches(emailRegex);
+    }
+
+    private List<String> extractRoles(SecurityContext securityContext) {
+        List<String> roles = new ArrayList<>();
+        if (securityContext.isUserInRole("admin")) roles.add("admin");
+        if (securityContext.isUserInRole("user")) roles.add("user");
+        return roles;
+    }
+
+    private void validateId(Integer id) {
+        if (id == null || id <= 0) {
+            throw new IllegalArgumentException("Invalid user ID: must be a positive integer");
+        }
+    }
+
+    private void validateEmail(String email) {
+        if (email == null || email.isBlank()) {
+            throw new IllegalArgumentException("Email parameter is required and cannot be empty");
         }
     }
 

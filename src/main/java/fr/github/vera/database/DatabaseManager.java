@@ -18,11 +18,9 @@ import java.util.List;
 public class DatabaseManager {
     private static final ConfigProperties CONFIG_PROPERTIES = ConfigProperties.getInstance();
     private static final Logger logger = LogManager.getLogger();
-
+    private static final Object lock = new Object();
     // Singleton instance
     private static volatile DatabaseManager instance;
-    private static final Object lock = new Object();
-
     private HikariDataSource dataSource;
     private boolean initialized = false;
     private boolean initializing = false;
@@ -156,6 +154,7 @@ public class DatabaseManager {
             }
 
             // Optionnel : configurer la connexion PostgreSQL
+            assert connection != null;
             connection.setAutoCommit(true);
 
             return connection;
@@ -213,7 +212,7 @@ public class DatabaseManager {
             // Vérifier si les tables existent déjà
             if (!isDatabaseInitialized()) {
                 logger.info("Initialisation du schéma de base de données...");
-                executeSqlScript("/database/init-db.sql");
+                executeSqlScript();
                 logger.info("Schéma de base de données initialisé avec succès");
             } else {
                 logger.debug("Base de données déjà initialisée");
@@ -231,11 +230,6 @@ public class DatabaseManager {
         }
     }
 
-    @FunctionalInterface
-    public interface DatabaseAction<T> {
-        T execute(Connection connection) throws SQLException;
-    }
-
     private boolean isDatabaseInitialized() {
         String checkTableSql = "SELECT EXISTS (SELECT FROM information_schema.tables WHERE table_name = 'users')";
 
@@ -247,10 +241,10 @@ public class DatabaseManager {
         }, "vérification initialisation BDD");
     }
 
-    private void executeSqlScript(String scriptPath) {
+    private void executeSqlScript() {
         executeWithConnection(connection -> {
             try {
-                String script = loadScriptFromResources(scriptPath);
+                String script = loadScriptFromResources("/database/init-db.sql");
                 List<String> sqlCommands = splitSqlScript(script);
 
                 for (String sqlCommand : sqlCommands) {
@@ -322,5 +316,10 @@ public class DatabaseManager {
         } catch (Exception e) {
             throw new RuntimeException("Impossible de charger le script SQL: " + path, e);
         }
+    }
+
+    @FunctionalInterface
+    public interface DatabaseAction<T> {
+        T execute(Connection connection) throws SQLException;
     }
 }

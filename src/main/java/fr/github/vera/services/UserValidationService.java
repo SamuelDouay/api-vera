@@ -6,7 +6,12 @@ import fr.github.vera.exception.UserNotFoundException;
 import fr.github.vera.model.User;
 import jakarta.ws.rs.core.SecurityContext;
 
-public record UserValidationService(UserService userService) {
+public class UserValidationService {
+    private final UserService userService;
+
+    public UserValidationService(UserService userService) {
+        this.userService = userService;
+    }
 
     // Validation principale pour l'accès utilisateur
     public void validateUserAccess(Integer id, String email, SecurityContext securityContext, User userToUpdate) {

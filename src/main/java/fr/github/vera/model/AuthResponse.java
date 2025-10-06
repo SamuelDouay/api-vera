@@ -1,24 +1,24 @@
 package fr.github.vera.model;
 
 public class AuthResponse {
-    private String accessToken;
+    private String token;
     private String refreshToken;
     private User user;
     private String tokenType = "Bearer";
     private long expiresIn = 3600;
 
-    public AuthResponse(String accessToken, String refreshToken, User user) {
-        this.accessToken = accessToken;
+    public AuthResponse(String token, String refreshToken, User user) {
+        this.token = token;
         this.refreshToken = refreshToken;
         this.user = user;
     }
 
-    public String getAccessToken() {
-        return accessToken;
+    public String getToken() {
+        return token;
     }
 
-    public void setAccessToken(String accessToken) {
-        this.accessToken = accessToken;
+    public void setToken(String token) {
+        this.token = token;
     }
 
     public String getRefreshToken() {

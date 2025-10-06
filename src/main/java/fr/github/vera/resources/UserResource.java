@@ -18,6 +18,8 @@ import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.SecurityContext;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import java.net.URI;
 import java.util.HashMap;
@@ -29,6 +31,7 @@ import java.util.Map;
 @Consumes(MediaType.APPLICATION_JSON)
 @Tag(name = "Users", description = "Gestion des utilisateurs")
 public class UserResource {
+    private static final Logger log = LogManager.getLogger(UserResource.class);
     private final UserService userService = new UserService();
     private final UserValidationService validationService = new UserValidationService(userService);
 

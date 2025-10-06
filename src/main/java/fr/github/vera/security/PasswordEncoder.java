@@ -22,6 +22,8 @@ public class PasswordEncoder {
             return argon2.hash(ITERATIONS, MEMORY, PARALLELISM, plainPassword.toCharArray());
         } catch (Exception e) {
             throw new RuntimeException("Erreur lors du hashage du password", e);
+        } finally {
+            argon2.wipeArray(plainPassword.toCharArray()); // Nettoyer la mémoire
         }
     }
 

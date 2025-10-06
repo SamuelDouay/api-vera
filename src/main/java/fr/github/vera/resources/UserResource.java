@@ -1,38 +1,36 @@
 package fr.github.vera.resources;
 
+import fr.github.vera.exception.UserNotFoundException;
 import fr.github.vera.filters.Secured;
 import fr.github.vera.model.ResponseApi;
 import fr.github.vera.model.User;
 import fr.github.vera.services.UserService;
+import fr.github.vera.services.UserValidationService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import jakarta.validation.ConstraintViolationException;
 import jakarta.validation.Valid;
 import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.SecurityContext;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 
 import java.net.URI;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 
 @Path("/users")
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)
 @Tag(name = "Users", description = "Gestion des utilisateurs")
 public class UserResource {
-    private static final Logger log = LogManager.getLogger(UserResource.class);
     private final UserService userService = new UserService();
+    private final UserValidationService validationService = new UserValidationService(userService);
 
     @GET
     @Secured(roles = {"admin"})
@@ -46,18 +44,11 @@ public class UserResource {
     )
     public Response getAllUsers(@QueryParam("limit") @DefaultValue("100") int limit,
                                 @QueryParam("offset") @DefaultValue("0") int offset) {
-        try {
-            List<User> users = userService.getAllUsers(limit, offset);
-            List<User> paginatedUsers = applyPagination(users, limit, offset);
-            Map<String, Object> meta = createPaginationMeta(users.size(), offset, limit, paginatedUsers.size());
-            ResponseApi<List<User>> response = new ResponseApi<>(paginatedUsers, meta);
-            return Response.ok(response).build();
-        } catch (Exception e) {
-            ResponseApi<String> errorResponse = new ResponseApi<>("Failed to retrieve users");
-            return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
-                    .entity(errorResponse)
-                    .build();
-        }
+        List<User> users = userService.getAllUsers(limit, offset);
+        List<User> paginatedUsers = applyPagination(users, limit, offset);
+        Map<String, Object> meta = createPaginationMeta(users.size(), offset, limit, paginatedUsers.size());
+        ResponseApi<List<User>> response = new ResponseApi<>(paginatedUsers, meta);
+        return Response.ok(response).build();
     }
 
     @GET
@@ -81,22 +72,13 @@ public class UserResource {
     })
     public Response getUserById(@PathParam("id") Integer id, @Context SecurityContext securityContext) {
 
-        Response validationResponse = validateUserAccess(id, securityContext, null);
-        if (validationResponse != null) {
-            return validationResponse;
-        }
+        validationService.validateUserAccess(id, null, securityContext, null);
 
-        Optional<User> user = userService.getUserById(id);
+        User user = userService.getUserById(id)
+                .orElseThrow(() -> new UserNotFoundException("User not found with ID: " + id));
 
-        if (user.isPresent()) {
-            ResponseApi<User> response = new ResponseApi<>(user.get());
-            return Response.ok(response).build();
-        } else {
-            ResponseApi<String> errorResponse = new ResponseApi<>("User not found with ID: " + id);
-            return Response.status(Response.Status.NOT_FOUND)
-                    .entity(errorResponse)
-                    .build();
-        }
+        ResponseApi<User> response = new ResponseApi<>(user);
+        return Response.ok(response).build();
     }
 
     @PUT
@@ -119,33 +101,16 @@ public class UserResource {
             )
     })
     public Response updateUser(@PathParam("id") Integer id, @Valid User user, @Context SecurityContext securityContext) {
-        try {
-            Response validationResponse = validateUserAccess(id, securityContext, user);
-            if (validationResponse != null) {
-                return validationResponse;
-            }
-            User updatedUser = userService.updateUser(id, user);
 
-            if (updatedUser != null) {
-                ResponseApi<User> response = new ResponseApi<>(updatedUser);
-                return Response.ok(response).build();
-            } else {
-                ResponseApi<String> errorResponse = new ResponseApi<>("User not found");
-                return Response.status(Response.Status.NOT_FOUND)
-                        .entity(errorResponse)
-                        .build();
-            }
-        } catch (ConstraintViolationException e) {
-            ResponseApi<String> errorResponse = new ResponseApi<>(e.getMessage());
-            return Response.status(Response.Status.BAD_REQUEST)
-                    .entity(errorResponse)
-                    .build();
-        } catch (Exception e) {
-            ResponseApi<String> errorResponse = new ResponseApi<>("Failed to update user: " + e.getMessage());
-            return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
-                    .entity(errorResponse)
-                    .build();
+        validationService.validateUserAccess(id, null, securityContext, user);
+
+        User updatedUser = userService.updateUser(id, user);
+        if (updatedUser == null) {
+            throw new UserNotFoundException("User not found");
         }
+
+        ResponseApi<User> response = new ResponseApi<>(updatedUser);
+        return Response.ok(response).build();
     }
 
     @DELETE
@@ -167,23 +132,15 @@ public class UserResource {
             )
     })
     public Response deleteUser(@PathParam("id") Integer id) {
-        if (id == null || id <= 0) {
-            ResponseApi<String> errorResponse = new ResponseApi<>("Invalid user ID");
-            return Response.status(Response.Status.BAD_REQUEST)
-                    .entity(errorResponse)
-                    .build();
-        }
 
+        validationService.validateUserId(id);
 
         boolean deleted = userService.deleteUser(id);
-        if (deleted) {
-            return Response.noContent().build();
-        } else {
-            ResponseApi<String> errorResponse = new ResponseApi<>("User not found");
-            return Response.status(Response.Status.NOT_FOUND)
-                    .entity(errorResponse)
-                    .build();
+        if (!deleted) {
+            throw new UserNotFoundException("User not found");
         }
+
+        return Response.noContent().build();
     }
 
     @GET
@@ -211,41 +168,14 @@ public class UserResource {
             )
     })
     public Response getUserByEmail(@QueryParam("email") String email, @Context SecurityContext securityContext) {
-        if (email == null || email.isBlank()) {
-            ResponseApi<String> errorResponse = new ResponseApi<>("Email parameter is required and cannot be empty");
-            return Response.status(Response.Status.BAD_REQUEST)
-                    .entity(errorResponse)
-                    .build();
-        }
 
-        if (!isValidEmailFormat(email)) {
-            ResponseApi<String> errorResponse = new ResponseApi<>("Invalid email format");
-            return Response.status(Response.Status.BAD_REQUEST)
-                    .entity(errorResponse)
-                    .build();
-        }
+        validationService.validateUserAccess(0, email, securityContext, null);
 
-        String currentUserEmail = securityContext.getUserPrincipal().getName();
-        boolean isAdmin = securityContext.isUserInRole("admin");
-        boolean isOwnProfile = currentUserEmail.equals(email);
+        User user = userService.getUserByEmail(email)
+                .orElseThrow(() -> new UserNotFoundException("User not found"));
 
-        // User normal ne peut chercher que son propre email
-        if (!isAdmin && !isOwnProfile) {
-            ResponseApi<String> errorResponse = new ResponseApi<>("Access denied - you can only search your own email");
-            return Response.status(Response.Status.FORBIDDEN).entity(errorResponse).build();
-        }
-
-
-        Optional<User> user = userService.getUserByEmail(email);
-        if (user.isPresent()) {
-            ResponseApi<User> response = new ResponseApi<>(user.get());
-            return Response.ok(response).build();
-        } else {
-            ResponseApi<String> errorResponse = new ResponseApi<>("User not found");
-            return Response.status(Response.Status.NOT_FOUND)
-                    .entity(errorResponse)
-                    .build();
-        }
+        ResponseApi<User> response = new ResponseApi<>(user);
+        return Response.ok(response).build();
     }
 
     @GET
@@ -287,31 +217,16 @@ public class UserResource {
             )
     })
     public Response createUser(@Valid User user) {
-        try {
-            if (!isValidEmailFormat(user.getEmail())) {
-                ResponseApi<String> errorResponse = new ResponseApi<>("Invalid email format");
-                return Response.status(Response.Status.BAD_REQUEST)
-                        .entity(errorResponse)
-                        .build();
-            }
 
-            User createdUser = userService.createUser(user);
-            ResponseApi<User> response = new ResponseApi<>(createdUser);
-            return Response.status(Response.Status.CREATED)
-                    .entity(response)
-                    .location(URI.create("/users/" + createdUser.getId()))
-                    .build();
-        } catch (ConstraintViolationException e) {
-            ResponseApi<String> errorResponse = new ResponseApi<>(e.getMessage());
-            return Response.status(Response.Status.BAD_REQUEST)
-                    .entity(errorResponse)
-                    .build();
-        } catch (Exception e) {
-            ResponseApi<String> errorResponse = new ResponseApi<>("Failed to create user: " + e.getMessage());
-            return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
-                    .entity(errorResponse)
-                    .build();
-        }
+        validationService.validateEmail(user.getEmail());
+
+        User createdUser = userService.createUser(user);
+
+        ResponseApi<User> response = new ResponseApi<>(createdUser);
+        return Response.status(Response.Status.CREATED)
+                .entity(response)
+                .location(URI.create("/users/" + createdUser.getId()))
+                .build();
     }
 
     private List<User> applyPagination(List<User> users, int limit, int offset) {
@@ -328,55 +243,4 @@ public class UserResource {
         meta.put("returned", returned);
         return meta;
     }
-
-    private boolean isValidEmailFormat(String email) {
-        String emailRegex = "^[A-Za-z0-9+_.-]+@(.+)$";
-        return email.matches(emailRegex);
-    }
-
-    private Response validateUserAccess(Integer id, SecurityContext securityContext, User user) {
-        boolean isAdmin = securityContext.isUserInRole("admin");
-
-        if (id == null || id <= 0) {
-            ResponseApi<String> errorResponse = new ResponseApi<>("Invalid user ID: must be a positive integer");
-            return Response.status(Response.Status.BAD_REQUEST)
-                    .entity(errorResponse)
-                    .build();
-        }
-
-        String currentUserEmail = securityContext.getUserPrincipal().getName();
-        Optional<User> currentUserOpt = userService.getUserByEmail(currentUserEmail);
-
-        // Ajout d'une vérification pour éviter NoSuchElementException
-        if (currentUserOpt.isEmpty()) {
-            ResponseApi<String> errorResponse = new ResponseApi<>("Current user not found");
-            return Response.status(Response.Status.UNAUTHORIZED).entity(errorResponse).build();
-        }
-
-        User currentUser = currentUserOpt.get();
-
-        if (!isAdmin) {
-            if (!currentUser.getId().equals(id)) {
-                ResponseApi<String> errorResponse = new ResponseApi<>("Access denied - you can only view your own profile");
-                return Response.status(Response.Status.FORBIDDEN).entity(errorResponse).build();
-            }
-            if (user != null) {
-                if (user.getRole() != null && !user.getRole().equals(currentUser.getRole())) {
-                    ResponseApi<String> errorResponse = new ResponseApi<>("Access denied - you cannot change your role");
-                    return Response.status(Response.Status.FORBIDDEN).entity(errorResponse).build();
-                }
-
-                if (!isValidEmailFormat(user.getEmail())) {
-                    ResponseApi<String> errorResponse = new ResponseApi<>("Invalid email format");
-                    return Response.status(Response.Status.BAD_REQUEST)
-                            .entity(errorResponse)
-                            .build();
-                }
-            }
-        }
-
-
-        return null; // Aucune erreur, validation réussie
-    }
-
 }

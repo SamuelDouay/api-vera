@@ -20,6 +20,12 @@ public class GlobalExceptionMapper implements ExceptionMapper<Exception> {
         logger.error("Error caught: {}", exception.getMessage(), exception);
 
         switch (exception) {
+            case ValidationException vaEx -> {
+                ResponseApi<String> errorResponse = new ResponseApi<>(exception.getMessage());
+                return Response.status(vaEx.getStatusCode())
+                        .entity(errorResponse)
+                        .build();
+            }
             case NotFoundException _ -> {
                 logger.warn("Route not found: {}", exception.getMessage());
                 return Response.status(Response.Status.NOT_FOUND)

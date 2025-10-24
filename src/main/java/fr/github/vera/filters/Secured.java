@@ -13,5 +13,5 @@ import java.lang.annotation.Target;
 @Target({ElementType.TYPE, ElementType.METHOD})
 @SecurityRequirement(name = "BearerAuth")
 public @interface Secured {
-    String[] roles() default {};
+    boolean adminOnly() default false;
 }

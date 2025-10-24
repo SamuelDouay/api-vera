@@ -26,9 +26,9 @@ public class UserRepository extends BaseRepository<User, Integer> implements IUs
 
     private User create(User user) {
         validateUserForCreation(user);
-        String sql = "INSERT INTO users (name, surname, email, role, password) VALUES (?, ?, ?, ?, ?)";
+        String sql = "INSERT INTO users (name, surname, email, password, is_admin) VALUES (?, ?, ?, ?, ?)";
         Integer generatedId = executeUpdateWithGeneratedKeys(sql,
-                "CREATE USER", user.getName(), user.getSurname(), user.getEmail(), user.getRole(), user.getPassword());
+                "CREATE USER", user.getName(), user.getSurname(), user.getEmail(), user.getPassword(), user.isAdmin());
         user.setId(generatedId);
         return user;
     }
@@ -40,9 +40,9 @@ public class UserRepository extends BaseRepository<User, Integer> implements IUs
                 .set("surname", user.getSurname())
                 .set("email", user.getEmail())
                 .set("password", user.getPassword())
-                .set("role", user.getRole())
+                .set("is_admin", user.isAdmin())
                 .where("id = ?", user.getId());
-        
+
         if (builder.hasUpdates()) {
             executeUpdate(builder.buildSql(), "UPDATE USER", builder.buildParams());
         }
@@ -62,7 +62,7 @@ public class UserRepository extends BaseRepository<User, Integer> implements IUs
                 rs.getString("name"),
                 rs.getString("surname"),
                 rs.getString("email"),
-                rs.getString("role"),
+                rs.getBoolean("is_admin"),
                 rs.getString("password")
         );
     }

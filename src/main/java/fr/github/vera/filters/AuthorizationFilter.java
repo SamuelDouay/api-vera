@@ -13,9 +13,7 @@ import jakarta.ws.rs.ext.Provider;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import java.io.IOException;
 import java.lang.reflect.Method;
-import java.util.Arrays;
 
 @Secured
 @Provider
@@ -27,38 +25,29 @@ public class AuthorizationFilter implements ContainerRequestFilter {
     private ResourceInfo resourceInfo;
 
     @Override
-    public void filter(ContainerRequestContext requestContext) throws IOException {
+    public void filter(ContainerRequestContext requestContext) {
         SecurityContext securityContext = requestContext.getSecurityContext();
-
-        // Récupérer l'annotation @Secured de la méthode ou de la classe
         Secured secured = getSecuredAnnotation();
 
         if (secured != null) {
-            String[] requiredRoles = secured.roles();
+            boolean adminOnly = secured.adminOnly();
             String currentUser = securityContext.getUserPrincipal().getName();
+            boolean isAdmin = securityContext.isUserInRole("admin");
 
-            // Vérifier si l'utilisateur a au moins un des rôles requis
-            boolean hasRequiredRole = Arrays.stream(requiredRoles)
-                    .anyMatch(securityContext::isUserInRole);
+            log.debug("Vérification accès - Utilisateur: {}, Admin: {}, adminOnly: {}",
+                    currentUser, isAdmin, adminOnly);
 
-            if (!hasRequiredRole) {
-                String currentRole = getCurrentUserRole(securityContext);
-                String errorMessage = String.format(
-                        "Accès refusé. Rôles requis: %s. Votre rôle: %s",
-                        String.join(", ", requiredRoles), currentRole
-                );
+            // Si la route est réservée aux admins ET que l'utilisateur n'est pas admin
+            if (adminOnly && !isAdmin) {
+                String errorMessage = "Accès refusé. Réservé aux administrateurs.";
 
-                log.warn("Accès refusé pour l'utilisateur: {} - {}", currentUser, errorMessage);
+                log.warn("Accès admin refusé pour l'utilisateur: {}", currentUser);
 
                 ResponseApi<String> errorResponse = new ResponseApi<>(errorMessage);
                 requestContext.abortWith(Response.status(Response.Status.FORBIDDEN)
                         .entity(errorResponse)
                         .build());
-            } else {
-                log.info("Accès autorisé pour l'utilisateur: {}", currentUser);
             }
-        } else {
-            log.debug("Aucune annotation @Secured trouvée - pas de vérification de rôle nécessaire");
         }
     }
 
@@ -68,7 +57,6 @@ public class AuthorizationFilter implements ContainerRequestFilter {
         if (method != null) {
             Secured methodAnnotation = method.getAnnotation(Secured.class);
             if (methodAnnotation != null) {
-                log.debug("Annotation @Secured trouvée sur la méthode: {}", method.getName());
                 return methodAnnotation;
             }
         }
@@ -78,16 +66,9 @@ public class AuthorizationFilter implements ContainerRequestFilter {
         if (resourceClass != null) {
             Secured classAnnotation = resourceClass.getAnnotation(Secured.class);
             if (classAnnotation != null) {
-                log.debug("Annotation @Secured trouvée sur la classe: {}", resourceClass.getSimpleName());
                 return classAnnotation;
             }
         }
         return null;
-    }
-
-    private String getCurrentUserRole(SecurityContext securityContext) {
-        if (securityContext.isUserInRole("admin")) return "admin";
-        if (securityContext.isUserInRole("user")) return "user";
-        return "AUCUN_ROLE_TROUVE";
     }
 }

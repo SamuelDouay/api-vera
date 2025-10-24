@@ -37,7 +37,7 @@ public class AuthService {
         }
 
         // 3. Générer les tokens
-        String accessToken = jwtService.generateAccessToken(user.getId(), user.getEmail(), user.getRole());
+        String accessToken = jwtService.generateAccessToken(user.getId(), user.getEmail(), user.isAdmin());
         String refreshToken = jwtService.generateRefreshToken(user.getEmail());
 
         // 4. Retourner la réponse
@@ -59,13 +59,13 @@ public class AuthService {
         newUser.setSurname(request.getSurname());
         newUser.setEmail(request.getEmail());
         newUser.setPassword(hashedPassword);
-        newUser.setRole("user"); // Rôle par défaut
+        newUser.setAdmin(false); // Rôle par défaut
 
         // 4. Sauvegarder l'utilisateur
         User savedUser = userRepository.save(newUser);
 
         // 5. Générer les tokens
-        String accessToken = jwtService.generateAccessToken(savedUser.getId(), savedUser.getEmail(), savedUser.getRole());
+        String accessToken = jwtService.generateAccessToken(savedUser.getId(), savedUser.getEmail(), savedUser.isAdmin());
         String refreshToken = jwtService.generateRefreshToken(savedUser.getEmail());
 
         return new AuthResponse(accessToken, refreshToken, savedUser);
@@ -84,7 +84,7 @@ public class AuthService {
         User user = userOpt.get();
 
         // 3. Générer un nouveau access token
-        String newAccessToken = jwtService.generateAccessToken(user.getId(), user.getEmail(), user.getRole());
+        String newAccessToken = jwtService.generateAccessToken(user.getId(), user.getEmail(), user.isAdmin());
 
         // 4. Réutiliser le même refresh token ou en générer un nouveau
         return new AuthResponse(newAccessToken, request.getRefreshToken(), user);

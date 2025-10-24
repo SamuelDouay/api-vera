@@ -73,7 +73,7 @@ public class AuthResource {
 
     @POST
     @Path("/logout")
-    @Secured(roles = {"admin", "user"})
+    @Secured()
     @Operation(summary = "Déconnexion")
     public Response logout(@HeaderParam("Authorization") String token) {
         if (token != null && token.startsWith("Bearer ")) {

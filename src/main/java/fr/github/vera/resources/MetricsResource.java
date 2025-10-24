@@ -16,7 +16,7 @@ import java.util.Map;
 public class MetricsResource {
 
     @GET
-    @Secured(roles = {"admin"})
+    @Secured(adminOnly = true)
     public Response getMetrics() {
         MetricRegistry metrics = new MetricRegistry();
         Map<String, Object> metricsData = new HashMap<>();

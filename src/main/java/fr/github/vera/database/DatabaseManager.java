@@ -244,7 +244,7 @@ public class DatabaseManager {
     private void executeSqlScript() {
         executeWithConnection(connection -> {
             try {
-                String script = loadScriptFromResources("/database/init-db.sql");
+                String script = loadScriptFromResources("/database/init.sql");
                 List<String> sqlCommands = splitSqlScript(script);
 
                 for (String sqlCommand : sqlCommands) {

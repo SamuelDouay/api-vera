@@ -108,9 +108,8 @@ public class UserValidationService {
     }
 
     private void validateRoleChange(User userToUpdate, User currentUser) {
-        if (userToUpdate.getRole() != null && !userToUpdate.getRole().equals(currentUser.getRole())) {
+        if (userToUpdate.isAdmin() && !currentUser.isAdmin())
             throw new AccessDeniedException("Access denied - you cannot change your role");
-        }
     }
 
     private void validateEmailUpdate(User userToUpdate) {

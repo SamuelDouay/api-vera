@@ -30,6 +30,7 @@ public class JwtAuthFilter implements ContainerRequestFilter {
         if (isPublicEndpoint() || isPublicPath(requestContext)) {
             return;
         }
+
         // Extraire le token JWT
         String authHeader = requestContext.getHeaderString(HttpHeaders.AUTHORIZATION);
         if (authHeader == null || !authHeader.startsWith("Bearer ")) {
@@ -43,11 +44,14 @@ public class JwtAuthFilter implements ContainerRequestFilter {
             // Valider le token
             Claims claims = jwtService.validateToken(token);
             String email = claims.getSubject();
-            String role = claims.get("role", String.class);
-            Integer userId = claims.get("userId", Integer.class);
+            Boolean isAdmin = claims.get("isAdmin", Boolean.class);
+
+            if (isAdmin == null) {
+                isAdmin = false; // Valeur par défaut si non présent
+            }
 
             // Définir le contexte de sécurité
-            requestContext.setSecurityContext(createSecurityContext(email, role));
+            requestContext.setSecurityContext(createSecurityContext(email, isAdmin));
 
         } catch (Exception e) {
             abortWithUnauthorized(requestContext, "Token JWT invalide: " + e.getMessage());
@@ -72,7 +76,7 @@ public class JwtAuthFilter implements ContainerRequestFilter {
         return path.startsWith("swagger") || path.startsWith("openapi");
     }
 
-    private SecurityContext createSecurityContext(String email, String role) {
+    private SecurityContext createSecurityContext(String email, boolean isAdmin) {
         return new SecurityContext() {
             @Override
             public Principal getUserPrincipal() {
@@ -80,8 +84,12 @@ public class JwtAuthFilter implements ContainerRequestFilter {
             }
 
             @Override
-            public boolean isUserInRole(String requiredRole) {
-                return role != null && role.equals(requiredRole);
+            public boolean isUserInRole(String role) {
+                if ("admin".equals(role)) {
+                    return isAdmin;
+                }
+                // Pour "user", tous les utilisateurs authentifiés sont considérés comme users
+                return "user".equals(role);
             }
 
             @Override

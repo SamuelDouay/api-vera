@@ -19,7 +19,7 @@ public class User {
     @NotBlank(message = "email cannot be blank")
     @Email(message = "email should be valid")
     private String email;
-    private String role;
+    private boolean admin;
     @JsonIgnore
     private String password;
 
@@ -27,12 +27,12 @@ public class User {
     public User() {
     }
 
-    public User(Integer id, String name, String surname, String email, String role, String password) {
+    public User(Integer id, String name, String surname, String email, boolean admin, String password) {
         this.id = id;
         this.name = name;
         this.email = email;
         this.surname = surname;
-        this.role = role;
+        this.admin = admin;
         this.password = password;
     }
 
@@ -77,17 +77,17 @@ public class User {
         this.password = password;
     }
 
-    public String getRole() {
-        return role;
+    public boolean isAdmin() {
+        return admin;
     }
 
-    public void setRole(String role) {
-        this.role = role;
+    public void setAdmin(boolean admin) {
+        this.admin = admin;
     }
 
     @Override
     public String toString() {
-        return String.format("User{id=%d, name='%s', email='%s', role='%s'}",
-                id, name, email, role);
+        return String.format("User{id=%d, name='%s', email='%s', isAdmin='%s'}",
+                id, name, email, admin);
     }
 }

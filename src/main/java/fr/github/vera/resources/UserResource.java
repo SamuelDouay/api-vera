@@ -18,8 +18,6 @@ import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.SecurityContext;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 
 import java.net.URI;
 import java.util.HashMap;
@@ -31,12 +29,11 @@ import java.util.Map;
 @Consumes(MediaType.APPLICATION_JSON)
 @Tag(name = "Users", description = "Gestion des utilisateurs")
 public class UserResource {
-    private static final Logger log = LogManager.getLogger(UserResource.class);
     private final UserService userService = new UserService();
     private final UserValidationService validationService = new UserValidationService(userService);
 
     @GET
-    @Secured(roles = {"admin"})
+    @Secured(adminOnly = true)
     @Operation(
             summary = "Récupérer tous les utilisateurs",
             description = "Retourne la liste de tous les utilisateurs")
@@ -56,7 +53,7 @@ public class UserResource {
 
     @GET
     @Path("/{id}")
-    @Secured(roles = {"admin", "user"})
+    @Secured()
     @Operation(
             summary = "Récupérer un utilisateur par ID",
             description = "Retourne un utilisateur spécifique par son ID"
@@ -86,7 +83,7 @@ public class UserResource {
 
     @PUT
     @Path("/{id}")
-    @Secured(roles = {"admin", "user"})
+    @Secured()
     @Operation(
             summary = "Mettre à jour un utilisateur",
             description = "Met à jour un utilisateur existant"
@@ -118,7 +115,7 @@ public class UserResource {
 
     @DELETE
     @Path("/{id}")
-    @Secured(roles = {"admin"})
+    @Secured(adminOnly = true)
     @Operation(
             summary = "Supprimer un utilisateur",
             description = "Supprime un utilisateur par son ID"
@@ -148,7 +145,7 @@ public class UserResource {
 
     @GET
     @Path("/email")
-    @Secured(roles = {"admin", "user"})
+    @Secured()
     @Operation(
             summary = "Récupérer un utilisateur par email",
             description = "Retourne un utilisateur spécifique par son email"
@@ -183,7 +180,7 @@ public class UserResource {
 
     @GET
     @Path("/count")
-    @Secured(roles = {"admin"})
+    @Secured(adminOnly = true)
     @Operation(
             summary = "Récupérer le nombre total d'utilisateurs",
             description = "Retourne le nombre total d'utilisateur"
@@ -202,7 +199,7 @@ public class UserResource {
     }
 
     @POST
-    @Secured(roles = {"admin"})
+    @Secured(adminOnly = true)
     @Operation(
             summary = "Créer un nouvel utilisateur",
             description = "Crée un nouvel utilisateur avec les données fournies"

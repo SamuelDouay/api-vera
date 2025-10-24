@@ -19,7 +19,7 @@ import java.util.Map;
 public class HealthResource {
 
     @GET
-    @Secured(roles = {"admin"})
+    @Secured(adminOnly = true)
     @Operation(summary = "Vérifier l'état de santé de l'application")
     public Response healthCheck() {
         Map<String, Object> health = new HashMap<>();

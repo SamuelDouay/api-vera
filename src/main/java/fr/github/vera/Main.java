@@ -54,7 +54,7 @@ public class Main {
             logger.info("✓ Serveur démarré avec succès!");
             logger.info("✓ API disponible à: {}", BASE_URI);
             logger.info("✓ Swagger UI: {}swagger-ui/", BASE_URI);
-            logger.info("✓ Health check: {}health", BASE_URI);
+            logger.info("✓ Health check: {}admin/health", BASE_URI);
             logger.info("=".repeat(60));
             logger.info("Appuyez sur ENTRÉE pour arrêter le serveur...");
 

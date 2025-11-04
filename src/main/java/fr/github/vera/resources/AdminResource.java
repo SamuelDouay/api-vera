@@ -1,5 +1,6 @@
 package fr.github.vera.resources;
 
+import com.codahale.metrics.MetricRegistry;
 import fr.github.vera.filters.Secured;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -13,12 +14,35 @@ import java.lang.management.ManagementFactory;
 import java.util.HashMap;
 import java.util.Map;
 
-@Path("/health")
+@Path("/admin")
+@Tag(name = "Admin")
 @Produces(MediaType.APPLICATION_JSON)
-@Tag(name = "Health", description = "Endpoints de santé de l'application")
-public class HealthResource {
+public class AdminResource {
 
     @GET
+    @Path("/metric")
+    @Secured(adminOnly = true)
+    public Response getMetrics() {
+        MetricRegistry metrics = new MetricRegistry();
+        Map<String, Object> metricsData = new HashMap<>();
+
+        metrics.getTimers().forEach((name, timer) -> {
+            Map<String, Object> timerData = new HashMap<>();
+            timerData.put("count", 0);
+            timerData.put("meanRate", 0);
+            timerData.put("mean", 0);
+            metricsData.put(name, timerData);
+        });
+
+        metrics.getCounters().forEach((name, counter) -> {
+            metricsData.put(name, counter.getCount());
+        });
+
+        return Response.ok(metricsData).build();
+    }
+
+    @GET
+    @Path("/health")
     @Secured(adminOnly = true)
     @Operation(summary = "Vérifier l'état de santé de l'application")
     public Response healthCheck() {

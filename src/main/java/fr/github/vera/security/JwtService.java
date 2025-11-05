@@ -62,6 +62,24 @@ public class JwtService {
         return validateToken(token).getSubject();
     }
 
+    private Integer extractUserIdFromToken(String token) {
+        try {
+            Claims claims = new JwtService().validateToken(token);
+            return claims.get("userId", Integer.class);
+        } catch (Exception e) {
+            throw new RuntimeException("Impossible d'extraire l'userId du token");
+        }
+    }
+
+    private Date extractExpirationFromToken(String token) {
+        try {
+            Claims claims = new JwtService().validateToken(token);
+            return claims.getExpiration();
+        } catch (Exception e) {
+            throw new RuntimeException("Impossible d'extraire la date d'expiration du token");
+        }
+    }
+
     public boolean isTokenExpired(String token) {
         try {
             return validateToken(token).getExpiration().before(new Date());

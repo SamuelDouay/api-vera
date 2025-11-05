@@ -1,5 +1,6 @@
 package fr.github.vera.filters;
 
+import fr.github.vera.Main;
 import fr.github.vera.model.ResponseApi;
 import fr.github.vera.security.JwtService;
 import io.jsonwebtoken.Claims;
@@ -41,6 +42,12 @@ public class JwtAuthFilter implements ContainerRequestFilter {
         String token = authHeader.substring(7);
 
         try {
+
+            if (isTokenBlacklisted(token)) {
+                abortWithUnauthorized(requestContext, "Token invalidé (déconnexion)");
+                return;
+            }
+
             // Valider le token
             Claims claims = jwtService.validateToken(token);
             String email = claims.getSubject();
@@ -56,6 +63,12 @@ public class JwtAuthFilter implements ContainerRequestFilter {
         } catch (Exception e) {
             abortWithUnauthorized(requestContext, "Token JWT invalide: " + e.getMessage());
         }
+    }
+
+    private boolean isTokenBlacklisted(String token) {
+        var blacklistService = Main.getTokenBlacklistService();
+        return blacklistService != null && blacklistService.isTokenBlacklisted(token);
+
     }
 
     private boolean isPublicEndpoint() {

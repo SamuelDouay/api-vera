@@ -1,9 +1,12 @@
 package fr.github.vera.resources;
 
+import fr.github.vera.Main;
 import fr.github.vera.filters.Public;
 import fr.github.vera.filters.Secured;
 import fr.github.vera.model.*;
+import fr.github.vera.security.JwtService;
 import fr.github.vera.services.AuthService;
+import io.jsonwebtoken.Claims;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
@@ -12,12 +15,15 @@ import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 
+import java.util.Date;
+
 @Path("/auth")
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)
 @Tag(name = "Authentication", description = "Gestion de l'authentification")
 public class AuthResource {
     private final AuthService authService = new AuthService();
+    private final JwtService jwtService = new JwtService();
 
     @POST
     @Public
@@ -77,10 +83,30 @@ public class AuthResource {
     @Operation(summary = "Déconnexion")
     public Response logout(@HeaderParam("Authorization") String token) {
         if (token != null && token.startsWith("Bearer ")) {
-            authService.logout(token.substring(7));
+            String jwtToken = token.substring(7);
+
+            Integer userId = extractUserIdFromToken(jwtToken);
+            Date date = extractExpirationFromToken(jwtToken);
+
+            var blacklistService = Main.getTokenBlacklistService();
+            if (blacklistService != null)
+                blacklistService.blacklistToken(jwtToken, date, userId);
+
+            authService.logout(jwtToken);
         }
         return Response.noContent().build();
     }
+
+    private Integer extractUserIdFromToken(String token) {
+        Claims claims = jwtService.validateToken(token);
+        return claims.get("userId", Integer.class);
+    }
+
+    private java.util.Date extractExpirationFromToken(String token) {
+        Claims claims = jwtService.validateToken(token);
+        return claims.getExpiration();
+    }
+
 
     @POST
     @Public

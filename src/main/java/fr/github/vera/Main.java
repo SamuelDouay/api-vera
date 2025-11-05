@@ -2,6 +2,8 @@ package fr.github.vera;
 
 import fr.github.vera.config.JerseyConfig;
 import fr.github.vera.database.DatabaseManager;
+import fr.github.vera.database.repository.BlacklistedTokenRepository;
+import fr.github.vera.services.TokenBlacklistService;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.glassfish.grizzly.http.server.HttpServer;
@@ -12,6 +14,7 @@ import java.net.URI;
 public class Main {
     private static final Logger logger = LogManager.getLogger(Main.class);
     private static final String BASE_URI = "http://localhost:8080/api/";
+    private static TokenBlacklistService tokenBlacklistService;
 
     public static void main(String[] args) {
         HttpServer server = null;
@@ -26,6 +29,9 @@ public class Main {
             logger.info("Initialisation de la base de données...");
             databaseManager.initialize();
 
+            logger.info("Initialisation du service de purge des tokens...");
+            initializeTokenPurgeService();
+
             // 3. Démarrer le serveur Jersey
             logger.info("Démarrage du serveur HTTP...");
             server = GrizzlyHttpServerFactory.createHttpServer(
@@ -37,14 +43,7 @@ public class Main {
             // Configurer le shutdown hook
             final HttpServer finalServer = server;
             Runtime.getRuntime().addShutdownHook(new Thread(() -> {
-                logger.info("Arrêt du serveur...");
-                try {
-                    finalServer.shutdown();
-                    databaseManager.shutdown();
-                    logger.info("Serveur arrêté proprement");
-                } catch (Exception e) {
-                    logger.error("Erreur lors de l'arrêt", e);
-                }
+                shutdownApplication(finalServer, databaseManager);
             }));
 
             // Démarrer le serveur
@@ -70,5 +69,51 @@ public class Main {
             }
             databaseManager.shutdown();
         }
+    }
+
+    private static void initializeTokenPurgeService() {
+        try {
+            BlacklistedTokenRepository blacklistRepository = new BlacklistedTokenRepository();
+            tokenBlacklistService = new TokenBlacklistService(blacklistRepository);
+
+            logger.info("✓ Service de purge des tokens initialisé");
+            logger.info("✓ Purge automatique toutes les 60 minutes");
+
+        } catch (Exception e) {
+            logger.error("❌ Erreur lors de l'initialisation du service de purge", e);
+            throw new RuntimeException("Impossible de démarrer le service de purge", e);
+        }
+    }
+
+    private static void shutdownApplication(HttpServer server, DatabaseManager databaseManager) {
+        logger.info("Arrêt de l'application...");
+
+        try {
+            // 1. Arrêter le service de purge
+            if (tokenBlacklistService != null) {
+                logger.info("Arrêt du service de purge...");
+                tokenBlacklistService.shutdown();
+                logger.info("✓ Service de purge arrêté");
+            }
+
+            // 2. Arrêter le serveur
+            if (server != null) {
+                server.shutdown();
+                logger.info("✓ Serveur HTTP arrêté");
+            }
+
+            // 3. Fermer la base de données
+            databaseManager.shutdown();
+            logger.info("✓ Connexions base de données fermées");
+
+            logger.info("✓ Application arrêtée proprement");
+
+        } catch (Exception e) {
+            logger.error("Erreur lors de l'arrêt de l'application", e);
+        }
+    }
+
+    public static TokenBlacklistService getTokenBlacklistService() {
+        return tokenBlacklistService;
     }
 }

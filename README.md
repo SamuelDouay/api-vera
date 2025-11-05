@@ -67,7 +67,7 @@ The platform uses a robust PostgreSQL database with:
 
 - **Endpoint:** `POST /api/auth/logout`
 - **Description:** Invalidate user session
-- **Status:** TODO - IN PROGRESS
+- **No Responses:** 204 OK
 
 ### Registration
 

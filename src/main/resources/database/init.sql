@@ -28,7 +28,6 @@ CREATE TABLE IF NOT EXISTS survey (
     name VARCHAR(255) NOT NULL,
     anonymization anonymization NOT NULL DEFAULT 'none',
     description TEXT,
-    link VARCHAR(255),
     id_user INTEGER NOT NULL REFERENCES users(id),
     is_quiz BOOLEAN NOT NULL DEFAULT false,
     is_active BOOLEAN NOT NULL DEFAULT true,

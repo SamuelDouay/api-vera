@@ -1,8 +1,12 @@
 package fr.github.vera.resources;
 
+import fr.github.vera.documention.CountResponseApi;
+import fr.github.vera.documention.ResponseApi;
+import fr.github.vera.documention.UserListResponseApi;
+import fr.github.vera.documention.UserResponseApi;
 import fr.github.vera.exception.UserNotFoundException;
 import fr.github.vera.filters.Secured;
-import fr.github.vera.model.ResponseApi;
+import fr.github.vera.model.Count;
 import fr.github.vera.model.User;
 import fr.github.vera.services.UserService;
 import fr.github.vera.services.UserValidationService;
@@ -40,14 +44,14 @@ public class UserResource {
     @ApiResponse(
             responseCode = "200",
             description = "Users retrieved successfully",
-            content = @Content(schema = @Schema(implementation = ResponseApi.class))
+            content = @Content(schema = @Schema(implementation = UserListResponseApi.class))
     )
     public Response getAllUsers(@QueryParam("limit") @DefaultValue("100") int limit,
                                 @QueryParam("offset") @DefaultValue("0") int offset) {
         List<User> users = userService.getAllUsers(limit, offset);
         List<User> paginatedUsers = applyPagination(users, limit, offset);
         Map<String, Object> meta = createPaginationMeta(users.size(), offset, limit, paginatedUsers.size());
-        ResponseApi<List<User>> response = new ResponseApi<>(paginatedUsers, meta);
+        UserListResponseApi response = new UserListResponseApi(paginatedUsers, meta);
         return Response.ok(response).build();
     }
 
@@ -62,7 +66,7 @@ public class UserResource {
             @ApiResponse(
                     responseCode = "200",
                     description = "Users retrieved successfully",
-                    content = @Content(schema = @Schema(implementation = ResponseApi.class))
+                    content = @Content(schema = @Schema(implementation = UserResponseApi.class))
             ),
             @ApiResponse(
                     responseCode = "404",
@@ -77,7 +81,7 @@ public class UserResource {
         User user = userService.getUserById(id)
                 .orElseThrow(() -> new UserNotFoundException("User not found with ID: " + id));
 
-        ResponseApi<User> response = new ResponseApi<>(user);
+        UserResponseApi response = new UserResponseApi(user);
         return Response.ok(response).build();
     }
 
@@ -92,7 +96,7 @@ public class UserResource {
             @ApiResponse(
                     responseCode = "200",
                     description = "User updated successfully",
-                    content = @Content(schema = @Schema(implementation = ResponseApi.class))
+                    content = @Content(schema = @Schema(implementation = UserResponseApi.class))
             ),
             @ApiResponse(
                     responseCode = "404",
@@ -108,8 +112,7 @@ public class UserResource {
         if (updatedUser == null) {
             throw new UserNotFoundException("User not found");
         }
-
-        ResponseApi<User> response = new ResponseApi<>(updatedUser);
+        UserResponseApi response = new UserResponseApi(updatedUser);
         return Response.ok(response).build();
     }
 
@@ -154,7 +157,7 @@ public class UserResource {
             @ApiResponse(
                     responseCode = "200",
                     description = "Users retrieved successfully",
-                    content = @Content(schema = @Schema(implementation = ResponseApi.class))
+                    content = @Content(schema = @Schema(implementation = UserResponseApi.class))
             ),
             @ApiResponse(
                     responseCode = "400",
@@ -174,7 +177,7 @@ public class UserResource {
         User user = userService.getUserByEmail(email)
                 .orElseThrow(() -> new UserNotFoundException("User not found"));
 
-        ResponseApi<User> response = new ResponseApi<>(user);
+        UserResponseApi response = new UserResponseApi(user);
         return Response.ok(response).build();
     }
 
@@ -189,13 +192,12 @@ public class UserResource {
             @ApiResponse(
                     responseCode = "200",
                     description = "return user size",
-                    content = @Content(schema = @Schema(implementation = ResponseApi.class))
+                    content = @Content(schema = @Schema(implementation = CountResponseApi.class))
             )
     })
     public Response count() {
-        Integer count = userService.count();
-        ResponseApi<Integer> response = new ResponseApi<>(count);
-        return Response.ok(response).build();
+        CountResponseApi countResponseApi = new CountResponseApi(new Count(userService.count()));
+        return Response.ok(countResponseApi).build();
     }
 
     @POST
@@ -208,7 +210,7 @@ public class UserResource {
             @ApiResponse(
                     responseCode = "201",
                     description = "User created successfully",
-                    content = @Content(schema = @Schema(implementation = ResponseApi.class))
+                    content = @Content(schema = @Schema(implementation = UserResponseApi.class))
             ),
             @ApiResponse(
                     responseCode = "400",
@@ -222,7 +224,7 @@ public class UserResource {
 
         User createdUser = userService.createUser(user);
 
-        ResponseApi<User> response = new ResponseApi<>(createdUser);
+        UserResponseApi response = new UserResponseApi(createdUser);
         return Response.status(Response.Status.CREATED)
                 .entity(response)
                 .location(URI.create("/users/" + createdUser.getId()))

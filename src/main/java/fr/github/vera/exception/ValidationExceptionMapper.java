@@ -1,6 +1,6 @@
 package fr.github.vera.exception;
 
-import fr.github.vera.model.ResponseApi;
+import fr.github.vera.documention.ErrorResponseApi;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.ext.ExceptionMapper;
 import jakarta.ws.rs.ext.Provider;
@@ -15,7 +15,7 @@ public class ValidationExceptionMapper implements ExceptionMapper<ValidationExce
     public Response toResponse(ValidationException exception) {
         log.warn("Validation error: {}", exception.getMessage());
 
-        ResponseApi<String> errorResponse = new ResponseApi<>(exception.getMessage());
+        ErrorResponseApi errorResponse = new ErrorResponseApi(exception.getMessage());
         return Response.status(exception.getStatusCode())
                 .entity(errorResponse)
                 .build();

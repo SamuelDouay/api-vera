@@ -1,6 +1,8 @@
 package fr.github.vera.resources;
 
 import fr.github.vera.Main;
+import fr.github.vera.documention.AuthResponseApi;
+import fr.github.vera.documention.ErrorResponseApi;
 import fr.github.vera.filters.Public;
 import fr.github.vera.filters.Secured;
 import fr.github.vera.model.*;
@@ -36,10 +38,10 @@ public class AuthResource {
     public Response login(LoginRequest request) {
         try {
             AuthResponse auth = authService.authenticate(request);
-            ResponseApi<AuthResponse> response = new ResponseApi<>(auth);
+            AuthResponseApi response = new AuthResponseApi(auth);
             return Response.ok(response).build();
         } catch (Exception e) {
-            ResponseApi<String> errorResponse = new ResponseApi<>(e.getMessage());
+            ErrorResponseApi errorResponse = new ErrorResponseApi(e.getMessage());
             return Response.status(Response.Status.UNAUTHORIZED).entity(errorResponse).build();
         }
     }
@@ -55,10 +57,10 @@ public class AuthResource {
     public Response register(RegisterRequest request) {
         try {
             AuthResponse auth = authService.register(request);
-            ResponseApi<AuthResponse> response = new ResponseApi<>(auth);
+            AuthResponseApi response = new AuthResponseApi(auth);
             return Response.status(Response.Status.CREATED).entity(response).build();
         } catch (Exception e) {
-            ResponseApi<String> errorResponse = new ResponseApi<>(e.getMessage());
+            ErrorResponseApi errorResponse = new ErrorResponseApi(e.getMessage());
             return Response.status(Response.Status.BAD_REQUEST).entity(errorResponse).build();
         }
     }
@@ -69,10 +71,10 @@ public class AuthResource {
     public Response refreshToken(RefreshRequest request) {
         try {
             AuthResponse auth = authService.refreshToken(request);
-            ResponseApi<AuthResponse> response = new ResponseApi<>(auth);
+            AuthResponseApi response = new AuthResponseApi(auth);
             return Response.ok(response).build();
         } catch (Exception e) {
-            ResponseApi<String> errorResponse = new ResponseApi<>(e.getMessage());
+            ErrorResponseApi errorResponse = new ErrorResponseApi(e.getMessage());
             return Response.status(Response.Status.UNAUTHORIZED).entity(errorResponse).build();
         }
     }
@@ -114,7 +116,7 @@ public class AuthResource {
     @Operation(summary = "Mot de passe oublié")
     public Response forgotPassword(@QueryParam("email") String email) {
         authService.forgotPassword(email);
-        ResponseApi<String> response = new ResponseApi<>("Si l'email existe, un lien de reset a été envoyé");
+        ErrorResponseApi response = new ErrorResponseApi("Si l'email existe, un lien de reset a été envoyé");
         return Response.ok(response).build();
     }
 
@@ -125,10 +127,10 @@ public class AuthResource {
     public Response resetPassword(ResetPasswordRequest request) {
         try {
             authService.resetPassword(request);
-            ResponseApi<String> response = new ResponseApi<>("Mot de passe mis à jour avec succès");
+            ErrorResponseApi response = new ErrorResponseApi("Mot de passe mis à jour avec succès");
             return Response.ok(response).build();
         } catch (Exception e) {
-            ResponseApi<String> errorResponse = new ResponseApi<>(e.getMessage());
+            ErrorResponseApi errorResponse = new ErrorResponseApi(e.getMessage());
             return Response.status(Response.Status.BAD_REQUEST).entity(errorResponse).build();
         }
     }

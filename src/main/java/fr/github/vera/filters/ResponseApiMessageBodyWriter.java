@@ -1,7 +1,7 @@
 package fr.github.vera.filters;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import fr.github.vera.model.ResponseApi;
+import fr.github.vera.documention.ResponseApi;
 import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.MultivaluedMap;

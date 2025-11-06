@@ -1,6 +1,6 @@
 package fr.github.vera.filters;
 
-import fr.github.vera.model.ResponseApi;
+import fr.github.vera.documention.ErrorResponseApi;
 import jakarta.annotation.Priority;
 import jakarta.ws.rs.Priorities;
 import jakarta.ws.rs.container.ContainerRequestContext;
@@ -43,7 +43,8 @@ public class AuthorizationFilter implements ContainerRequestFilter {
 
                 log.warn("Accès admin refusé pour l'utilisateur: {}", currentUser);
 
-                ResponseApi<String> errorResponse = new ResponseApi<>(errorMessage);
+                ErrorResponseApi
+                        errorResponse = new ErrorResponseApi(errorMessage);
                 requestContext.abortWith(Response.status(Response.Status.FORBIDDEN)
                         .entity(errorResponse)
                         .build());

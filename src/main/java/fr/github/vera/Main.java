@@ -2,7 +2,7 @@ package fr.github.vera;
 
 import fr.github.vera.config.JerseyConfig;
 import fr.github.vera.database.DatabaseManager;
-import fr.github.vera.database.repository.BlacklistedTokenRepository;
+import fr.github.vera.repository.BlacklistedTokenRepository;
 import fr.github.vera.services.TokenBlacklistService;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;

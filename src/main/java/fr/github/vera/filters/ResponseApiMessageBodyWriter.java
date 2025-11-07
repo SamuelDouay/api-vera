@@ -1,7 +1,7 @@
 package fr.github.vera.filters;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import fr.github.vera.documention.ResponseApi;
+import fr.github.vera.response.Response;
 import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.MultivaluedMap;
@@ -15,17 +15,17 @@ import java.lang.reflect.Type;
 
 @Provider
 @Produces({MediaType.APPLICATION_JSON, "application/vnd.sun.wadl+xml"})
-public class ResponseApiMessageBodyWriter implements MessageBodyWriter<ResponseApi<?>> {
+public class ResponseApiMessageBodyWriter implements MessageBodyWriter<Response<?>> {
 
     private final ObjectMapper objectMapper = new ObjectMapper();
 
     @Override
     public boolean isWriteable(Class<?> type, Type genericType, Annotation[] annotations, MediaType mediaType) {
-        return ResponseApi.class.isAssignableFrom(type);
+        return Response.class.isAssignableFrom(type);
     }
 
     @Override
-    public void writeTo(ResponseApi<?> responseApi, Class<?> type, Type genericType,
+    public void writeTo(Response<?> responseApi, Class<?> type, Type genericType,
                         Annotation[] annotations, MediaType mediaType,
                         MultivaluedMap<String, Object> httpHeaders, OutputStream entityStream)
             throws IOException {

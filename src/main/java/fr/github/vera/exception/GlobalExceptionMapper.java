@@ -1,6 +1,6 @@
 package fr.github.vera.exception;
 
-import fr.github.vera.documention.ErrorResponseApi;
+import fr.github.vera.response.ErrorResponse;
 import jakarta.validation.ConstraintViolationException;
 import jakarta.ws.rs.NotFoundException;
 import jakarta.ws.rs.WebApplicationException;
@@ -21,7 +21,7 @@ public class GlobalExceptionMapper implements ExceptionMapper<Exception> {
 
         switch (exception) {
             case ValidationException vaEx -> {
-                ErrorResponseApi errorResponse = new ErrorResponseApi(exception.getMessage());
+                ErrorResponse errorResponse = new ErrorResponse(exception.getMessage());
                 return Response.status(vaEx.getStatusCode())
                         .entity(errorResponse)
                         .build();
@@ -29,13 +29,13 @@ public class GlobalExceptionMapper implements ExceptionMapper<Exception> {
             case NotFoundException _ -> {
                 logger.warn("Route not found: {}", exception.getMessage());
                 return Response.status(Response.Status.NOT_FOUND)
-                        .entity(new ErrorResponseApi("Endpoint not found"))
+                        .entity(new ErrorResponse("Endpoint not found"))
                         .build();
             }
             case ConstraintViolationException _ -> {
                 logger.warn("Validation error: {}", exception.getMessage());
                 return Response.status(Response.Status.BAD_REQUEST)
-                        .entity(new ErrorResponseApi("Invalid input data"))
+                        .entity(new ErrorResponse("Invalid input data"))
                         .build();
             }
             case WebApplicationException webEx -> {
@@ -43,7 +43,7 @@ public class GlobalExceptionMapper implements ExceptionMapper<Exception> {
                 String message = getCustomMessageForStatus(status);
                 logger.warn("Web application error: {} - {}", status, message);
                 return Response.status(status)
-                        .entity(new ErrorResponseApi(exception.getMessage()))
+                        .entity(new ErrorResponse(exception.getMessage()))
                         .build();
             }
             default -> logger.error("Unhandled exception: ", exception);
@@ -51,7 +51,7 @@ public class GlobalExceptionMapper implements ExceptionMapper<Exception> {
 
         // Generic error
         return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
-                .entity(new ErrorResponseApi("Internal server error"))
+                .entity(new ErrorResponse("Internal server error"))
                 .build();
     }
 

@@ -1,13 +1,13 @@
 package fr.github.vera.resources;
 
-import fr.github.vera.documention.CountResponseApi;
-import fr.github.vera.documention.ResponseApi;
-import fr.github.vera.documention.UserListResponseApi;
-import fr.github.vera.documention.UserResponseApi;
 import fr.github.vera.exception.UserNotFoundException;
 import fr.github.vera.filters.Secured;
 import fr.github.vera.model.Count;
 import fr.github.vera.model.User;
+import fr.github.vera.response.CountResponse;
+import fr.github.vera.response.Response;
+import fr.github.vera.response.UserListResponse;
+import fr.github.vera.response.UserResponse;
 import fr.github.vera.services.UserService;
 import fr.github.vera.services.UserValidationService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -20,7 +20,6 @@ import jakarta.validation.Valid;
 import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.MediaType;
-import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.SecurityContext;
 
 import java.net.URI;
@@ -44,15 +43,15 @@ public class UserResource {
     @ApiResponse(
             responseCode = "200",
             description = "Users retrieved successfully",
-            content = @Content(schema = @Schema(implementation = UserListResponseApi.class))
+            content = @Content(schema = @Schema(implementation = UserListResponse.class))
     )
-    public Response getAllUsers(@QueryParam("limit") @DefaultValue("100") int limit,
-                                @QueryParam("offset") @DefaultValue("0") int offset) {
+    public jakarta.ws.rs.core.Response getAllUsers(@QueryParam("limit") @DefaultValue("100") int limit,
+                                                   @QueryParam("offset") @DefaultValue("0") int offset) {
         List<User> users = userService.getAllUsers(limit, offset);
         List<User> paginatedUsers = applyPagination(users, limit, offset);
         Map<String, Object> meta = createPaginationMeta(users.size(), offset, limit, paginatedUsers.size());
-        UserListResponseApi response = new UserListResponseApi(paginatedUsers, meta);
-        return Response.ok(response).build();
+        UserListResponse response = new UserListResponse(paginatedUsers, meta);
+        return jakarta.ws.rs.core.Response.ok(response).build();
     }
 
     @GET
@@ -66,23 +65,23 @@ public class UserResource {
             @ApiResponse(
                     responseCode = "200",
                     description = "Users retrieved successfully",
-                    content = @Content(schema = @Schema(implementation = UserResponseApi.class))
+                    content = @Content(schema = @Schema(implementation = UserResponse.class))
             ),
             @ApiResponse(
                     responseCode = "404",
                     description = "User not found",
-                    content = @Content(schema = @Schema(implementation = ResponseApi.class))
+                    content = @Content(schema = @Schema(implementation = Response.class))
             )
     })
-    public Response getUserById(@PathParam("id") Integer id, @Context SecurityContext securityContext) {
+    public jakarta.ws.rs.core.Response getUserById(@PathParam("id") Integer id, @Context SecurityContext securityContext) {
 
         validationService.validateUserAccess(id, null, securityContext, null);
 
         User user = userService.getUserById(id)
                 .orElseThrow(() -> new UserNotFoundException("User not found with ID: " + id));
 
-        UserResponseApi response = new UserResponseApi(user);
-        return Response.ok(response).build();
+        UserResponse response = new UserResponse(user);
+        return jakarta.ws.rs.core.Response.ok(response).build();
     }
 
     @PUT
@@ -96,15 +95,15 @@ public class UserResource {
             @ApiResponse(
                     responseCode = "200",
                     description = "User updated successfully",
-                    content = @Content(schema = @Schema(implementation = UserResponseApi.class))
+                    content = @Content(schema = @Schema(implementation = UserResponse.class))
             ),
             @ApiResponse(
                     responseCode = "404",
                     description = "User not found",
-                    content = @Content(schema = @Schema(implementation = ResponseApi.class))
+                    content = @Content(schema = @Schema(implementation = Response.class))
             )
     })
-    public Response updateUser(@PathParam("id") Integer id, @Valid User user, @Context SecurityContext securityContext) {
+    public jakarta.ws.rs.core.Response updateUser(@PathParam("id") Integer id, @Valid User user, @Context SecurityContext securityContext) {
 
         validationService.validateUserAccess(id, null, securityContext, user);
 
@@ -112,8 +111,8 @@ public class UserResource {
         if (updatedUser == null) {
             throw new UserNotFoundException("User not found");
         }
-        UserResponseApi response = new UserResponseApi(updatedUser);
-        return Response.ok(response).build();
+        UserResponse response = new UserResponse(updatedUser);
+        return jakarta.ws.rs.core.Response.ok(response).build();
     }
 
     @DELETE
@@ -131,10 +130,10 @@ public class UserResource {
             @ApiResponse(
                     responseCode = "404",
                     description = "User not found",
-                    content = @Content(schema = @Schema(implementation = ResponseApi.class))
+                    content = @Content(schema = @Schema(implementation = Response.class))
             )
     })
-    public Response deleteUser(@PathParam("id") Integer id) {
+    public jakarta.ws.rs.core.Response deleteUser(@PathParam("id") Integer id) {
 
         validationService.validateUserId(id);
 
@@ -143,7 +142,7 @@ public class UserResource {
             throw new UserNotFoundException("User not found");
         }
 
-        return Response.noContent().build();
+        return jakarta.ws.rs.core.Response.noContent().build();
     }
 
     @GET
@@ -157,28 +156,28 @@ public class UserResource {
             @ApiResponse(
                     responseCode = "200",
                     description = "Users retrieved successfully",
-                    content = @Content(schema = @Schema(implementation = UserResponseApi.class))
+                    content = @Content(schema = @Schema(implementation = UserResponse.class))
             ),
             @ApiResponse(
                     responseCode = "400",
                     description = "Invalid user email",
-                    content = @Content(schema = @Schema(implementation = ResponseApi.class))
+                    content = @Content(schema = @Schema(implementation = Response.class))
             ),
             @ApiResponse(
                     responseCode = "404",
                     description = "User not found",
-                    content = @Content(schema = @Schema(implementation = ResponseApi.class))
+                    content = @Content(schema = @Schema(implementation = Response.class))
             )
     })
-    public Response getUserByEmail(@QueryParam("email") String email, @Context SecurityContext securityContext) {
+    public jakarta.ws.rs.core.Response getUserByEmail(@QueryParam("email") String email, @Context SecurityContext securityContext) {
 
         validationService.validateUserAccess(0, email, securityContext, null);
 
         User user = userService.getUserByEmail(email)
                 .orElseThrow(() -> new UserNotFoundException("User not found"));
 
-        UserResponseApi response = new UserResponseApi(user);
-        return Response.ok(response).build();
+        UserResponse response = new UserResponse(user);
+        return jakarta.ws.rs.core.Response.ok(response).build();
     }
 
     @GET
@@ -192,12 +191,12 @@ public class UserResource {
             @ApiResponse(
                     responseCode = "200",
                     description = "return user size",
-                    content = @Content(schema = @Schema(implementation = CountResponseApi.class))
+                    content = @Content(schema = @Schema(implementation = CountResponse.class))
             )
     })
-    public Response count() {
-        CountResponseApi countResponseApi = new CountResponseApi(new Count(userService.count()));
-        return Response.ok(countResponseApi).build();
+    public jakarta.ws.rs.core.Response count() {
+        CountResponse countResponse = new CountResponse(new Count(userService.count()));
+        return jakarta.ws.rs.core.Response.ok(countResponse).build();
     }
 
     @POST
@@ -210,22 +209,22 @@ public class UserResource {
             @ApiResponse(
                     responseCode = "201",
                     description = "User created successfully",
-                    content = @Content(schema = @Schema(implementation = UserResponseApi.class))
+                    content = @Content(schema = @Schema(implementation = UserResponse.class))
             ),
             @ApiResponse(
                     responseCode = "400",
                     description = "Invalid user data",
-                    content = @Content(schema = @Schema(implementation = ResponseApi.class))
+                    content = @Content(schema = @Schema(implementation = Response.class))
             )
     })
-    public Response createUser(@Valid User user) {
+    public jakarta.ws.rs.core.Response createUser(@Valid User user) {
 
         validationService.validateEmail(user.getEmail());
 
         User createdUser = userService.createUser(user);
 
-        UserResponseApi response = new UserResponseApi(createdUser);
-        return Response.status(Response.Status.CREATED)
+        UserResponse response = new UserResponse(createdUser);
+        return jakarta.ws.rs.core.Response.status(jakarta.ws.rs.core.Response.Status.CREATED)
                 .entity(response)
                 .location(URI.create("/users/" + createdUser.getId()))
                 .build();

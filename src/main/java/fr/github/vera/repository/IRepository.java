@@ -1,4 +1,4 @@
-package fr.github.vera.database.repository;
+package fr.github.vera.repository;
 
 import java.util.List;
 import java.util.Optional;

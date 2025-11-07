@@ -1,9 +1,9 @@
-package fr.github.vera.documention;
+package fr.github.vera.response;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 
-public class ErrorResponseApi extends ResponseApi<String> {
-    public ErrorResponseApi(String data) {
+public class ErrorResponse extends Response<String> {
+    public ErrorResponse(String data) {
         super(data);
     }
 

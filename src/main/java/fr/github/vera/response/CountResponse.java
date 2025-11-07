@@ -1,10 +1,10 @@
-package fr.github.vera.documention;
+package fr.github.vera.response;
 
 import fr.github.vera.model.Count;
 import io.swagger.v3.oas.annotations.media.Schema;
 
-public class CountResponseApi extends ResponseApi<Count> {
-    public CountResponseApi(Count data) {
+public class CountResponse extends Response<Count> {
+    public CountResponse(Count data) {
         super(data);
     }
 

@@ -1,5 +1,6 @@
-package fr.github.vera.database.repository;
+package fr.github.vera.repository;
 
+import fr.github.vera.database.BaseRepository;
 import fr.github.vera.database.DynamicUpdateBuilder;
 import fr.github.vera.model.User;
 

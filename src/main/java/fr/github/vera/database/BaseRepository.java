@@ -1,4 +1,6 @@
-package fr.github.vera.database.repository;
+package fr.github.vera.database;
+
+import fr.github.vera.repository.IRepository;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;

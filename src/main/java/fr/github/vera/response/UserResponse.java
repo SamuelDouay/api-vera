@@ -1,10 +1,10 @@
-package fr.github.vera.documention;
+package fr.github.vera.response;
 
 import fr.github.vera.model.User;
 import io.swagger.v3.oas.annotations.media.Schema;
 
-public class UserResponseApi extends ResponseApi<User> {
-    public UserResponseApi(User data) {
+public class UserResponse extends Response<User> {
+    public UserResponse(User data) {
         super(data);
     }
 

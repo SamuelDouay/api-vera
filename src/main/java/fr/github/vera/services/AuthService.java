@@ -1,8 +1,8 @@
 package fr.github.vera.services;
 
-import fr.github.vera.database.repository.IUserRepository;
-import fr.github.vera.database.repository.UserRepository;
 import fr.github.vera.model.*;
+import fr.github.vera.repository.IUserRepository;
+import fr.github.vera.repository.UserRepository;
 import fr.github.vera.security.JwtService;
 import fr.github.vera.security.PasswordEncoder;
 import org.apache.logging.log4j.LogManager;

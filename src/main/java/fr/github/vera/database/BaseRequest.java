@@ -1,6 +1,5 @@
-package fr.github.vera.database.repository;
+package fr.github.vera.database;
 
-import fr.github.vera.database.DatabaseManager;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 

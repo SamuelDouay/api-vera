@@ -1,7 +1,10 @@
 package fr.github.vera.resources;
 
-import fr.github.vera.documention.ResponseApi;
 import fr.github.vera.filters.Secured;
+import fr.github.vera.response.CountResponse;
+import fr.github.vera.response.Response;
+import fr.github.vera.response.SurveyListResponse;
+import fr.github.vera.response.SurveyResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -11,7 +14,6 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.MediaType;
-import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.SecurityContext;
 
 @Path("/survey")
@@ -28,10 +30,10 @@ public class SurveyResource {
     @ApiResponse(
             responseCode = "200",
             description = "Questionnaires retrieved successfully",
-            content = @Content(schema = @Schema(implementation = ResponseApi.class))
+            content = @Content(schema = @Schema(implementation = SurveyListResponse.class))
     )
-    public Response getAllSurvey(@QueryParam("limit") @DefaultValue("100") int limit,
-                                 @QueryParam("offset") @DefaultValue("0") int offset) {
+    public jakarta.ws.rs.core.Response getAllSurvey(@QueryParam("limit") @DefaultValue("100") int limit,
+                                                    @QueryParam("offset") @DefaultValue("0") int offset) {
         return null;
     }
 
@@ -46,15 +48,15 @@ public class SurveyResource {
             @ApiResponse(
                     responseCode = "200",
                     description = "questionnaire retrieved successfully",
-                    content = @Content(schema = @Schema(implementation = ResponseApi.class))
+                    content = @Content(schema = @Schema(implementation = SurveyResponse.class))
             ),
             @ApiResponse(
                     responseCode = "404",
                     description = "questionnaire not found",
-                    content = @Content(schema = @Schema(implementation = ResponseApi.class))
+                    content = @Content(schema = @Schema(implementation = SurveyResponse.class))
             )
     })
-    public Response getSurveyById(@PathParam("id") Integer id, @Context SecurityContext securityContext) {
+    public jakarta.ws.rs.core.Response getSurveyById(@PathParam("id") Integer id, @Context SecurityContext securityContext) {
         return null;
     }
 
@@ -69,15 +71,15 @@ public class SurveyResource {
             @ApiResponse(
                     responseCode = "200",
                     description = "survey updated successfully",
-                    content = @Content(schema = @Schema(implementation = ResponseApi.class))
+                    content = @Content(schema = @Schema(implementation = SurveyResponse.class))
             ),
             @ApiResponse(
                     responseCode = "404",
                     description = "survey not found",
-                    content = @Content(schema = @Schema(implementation = ResponseApi.class))
+                    content = @Content(schema = @Schema(implementation = SurveyResponse.class))
             )
     })
-    public Response updateSurveyById(@PathParam("id") Integer id, @Context SecurityContext securityContext) {
+    public jakarta.ws.rs.core.Response updateSurveyById(@PathParam("id") Integer id, @Context SecurityContext securityContext) {
         return null;
     }
 
@@ -96,10 +98,10 @@ public class SurveyResource {
             @ApiResponse(
                     responseCode = "404",
                     description = "survey not found",
-                    content = @Content(schema = @Schema(implementation = ResponseApi.class))
+                    content = @Content(schema = @Schema(implementation = Response.class))
             )
     })
-    public Response deleteSurvey(@PathParam("id") Integer id) {
+    public jakarta.ws.rs.core.Response deleteSurvey(@PathParam("id") Integer id) {
         return null;
     }
 
@@ -114,10 +116,10 @@ public class SurveyResource {
             @ApiResponse(
                     responseCode = "200",
                     description = "return survey size",
-                    content = @Content(schema = @Schema(implementation = ResponseApi.class))
+                    content = @Content(schema = @Schema(implementation = CountResponse.class))
             )
     })
-    public Response count() {
+    public jakarta.ws.rs.core.Response count() {
         return null;
     }
 
@@ -131,15 +133,15 @@ public class SurveyResource {
             @ApiResponse(
                     responseCode = "201",
                     description = "survey created successfully",
-                    content = @Content(schema = @Schema(implementation = ResponseApi.class))
+                    content = @Content(schema = @Schema(implementation = SurveyResponse.class))
             ),
             @ApiResponse(
                     responseCode = "400",
                     description = "Invalid survey data",
-                    content = @Content(schema = @Schema(implementation = ResponseApi.class))
+                    content = @Content(schema = @Schema(implementation = SurveyResponse.class))
             )
     })
-    public Response createUser() {
+    public jakarta.ws.rs.core.Response createUser() {
         return null;
     }
 }

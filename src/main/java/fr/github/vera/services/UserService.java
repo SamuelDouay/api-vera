@@ -1,8 +1,8 @@
 package fr.github.vera.services;
 
-import fr.github.vera.database.repository.IUserRepository;
-import fr.github.vera.database.repository.UserRepository;
 import fr.github.vera.model.User;
+import fr.github.vera.repository.IUserRepository;
+import fr.github.vera.repository.UserRepository;
 
 import java.util.List;
 import java.util.Optional;

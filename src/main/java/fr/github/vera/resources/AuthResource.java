@@ -1,11 +1,14 @@
 package fr.github.vera.resources;
 
 import fr.github.vera.Main;
-import fr.github.vera.documention.AuthResponseApi;
-import fr.github.vera.documention.ErrorResponseApi;
 import fr.github.vera.filters.Public;
 import fr.github.vera.filters.Secured;
-import fr.github.vera.model.*;
+import fr.github.vera.model.LoginRequest;
+import fr.github.vera.model.RefreshRequest;
+import fr.github.vera.model.RegisterRequest;
+import fr.github.vera.model.ResetPasswordRequest;
+import fr.github.vera.response.AuthResponse;
+import fr.github.vera.response.ErrorResponse;
 import fr.github.vera.security.JwtService;
 import fr.github.vera.services.AuthService;
 import io.jsonwebtoken.Claims;
@@ -37,11 +40,11 @@ public class AuthResource {
     })
     public Response login(LoginRequest request) {
         try {
-            AuthResponse auth = authService.authenticate(request);
-            AuthResponseApi response = new AuthResponseApi(auth);
+            fr.github.vera.model.AuthResponse auth = authService.authenticate(request);
+            AuthResponse response = new AuthResponse(auth);
             return Response.ok(response).build();
         } catch (Exception e) {
-            ErrorResponseApi errorResponse = new ErrorResponseApi(e.getMessage());
+            ErrorResponse errorResponse = new ErrorResponse(e.getMessage());
             return Response.status(Response.Status.UNAUTHORIZED).entity(errorResponse).build();
         }
     }
@@ -56,11 +59,11 @@ public class AuthResource {
     })
     public Response register(RegisterRequest request) {
         try {
-            AuthResponse auth = authService.register(request);
-            AuthResponseApi response = new AuthResponseApi(auth);
+            fr.github.vera.model.AuthResponse auth = authService.register(request);
+            AuthResponse response = new AuthResponse(auth);
             return Response.status(Response.Status.CREATED).entity(response).build();
         } catch (Exception e) {
-            ErrorResponseApi errorResponse = new ErrorResponseApi(e.getMessage());
+            ErrorResponse errorResponse = new ErrorResponse(e.getMessage());
             return Response.status(Response.Status.BAD_REQUEST).entity(errorResponse).build();
         }
     }
@@ -70,11 +73,11 @@ public class AuthResource {
     @Operation(summary = "Rafraîchir le token")
     public Response refreshToken(RefreshRequest request) {
         try {
-            AuthResponse auth = authService.refreshToken(request);
-            AuthResponseApi response = new AuthResponseApi(auth);
+            fr.github.vera.model.AuthResponse auth = authService.refreshToken(request);
+            AuthResponse response = new AuthResponse(auth);
             return Response.ok(response).build();
         } catch (Exception e) {
-            ErrorResponseApi errorResponse = new ErrorResponseApi(e.getMessage());
+            ErrorResponse errorResponse = new ErrorResponse(e.getMessage());
             return Response.status(Response.Status.UNAUTHORIZED).entity(errorResponse).build();
         }
     }
@@ -116,7 +119,7 @@ public class AuthResource {
     @Operation(summary = "Mot de passe oublié")
     public Response forgotPassword(@QueryParam("email") String email) {
         authService.forgotPassword(email);
-        ErrorResponseApi response = new ErrorResponseApi("Si l'email existe, un lien de reset a été envoyé");
+        ErrorResponse response = new ErrorResponse("Si l'email existe, un lien de reset a été envoyé");
         return Response.ok(response).build();
     }
 
@@ -127,10 +130,10 @@ public class AuthResource {
     public Response resetPassword(ResetPasswordRequest request) {
         try {
             authService.resetPassword(request);
-            ErrorResponseApi response = new ErrorResponseApi("Mot de passe mis à jour avec succès");
+            ErrorResponse response = new ErrorResponse("Mot de passe mis à jour avec succès");
             return Response.ok(response).build();
         } catch (Exception e) {
-            ErrorResponseApi errorResponse = new ErrorResponseApi(e.getMessage());
+            ErrorResponse errorResponse = new ErrorResponse(e.getMessage());
             return Response.status(Response.Status.BAD_REQUEST).entity(errorResponse).build();
         }
     }

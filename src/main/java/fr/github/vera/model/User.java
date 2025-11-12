@@ -1,26 +1,35 @@
 package fr.github.vera.model;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import fr.github.vera.database.Column;
+import fr.github.vera.database.Table;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 
+@Table(name = "users")
 public class User {
+    @Column(name = "id", updatable = false)
     private Integer id;
 
     @NotBlank(message = "name cannot be blank")
     @Size(max = 255, message = "name must max 255 characters")
+    @Column(name = "name")
     private String name;
 
     @NotBlank(message = "surname cannot be blank")
     @Size(max = 255, message = "surname must max 255 characters")
+    @Column(name = "surname")
     private String surname;
 
     @NotBlank(message = "email cannot be blank")
     @Email(message = "email should be valid")
+    @Column(name = "email")
     private String email;
+    @Column(name = "is_admin")
     private boolean admin;
     @JsonIgnore
+    @Column(name = "password")
     private String password;
 
     // Constructeurs

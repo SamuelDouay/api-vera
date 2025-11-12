@@ -105,7 +105,7 @@ public abstract class BaseRequest {
                     }
 
                     int affectedRows = ps.executeUpdate();
-                    logger.info("{} - {} row(s) affected", context, affectedRows);
+                    logger.debug("{} - {} row(s) affected", context, affectedRows);
 
                     if (affectedRows == 0) {
                         throw new SQLException("Creating failed, no rows affected.");

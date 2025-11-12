@@ -7,8 +7,6 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.time.Instant;
-import java.util.ArrayList;
-import java.util.List;
 
 public class BlacklistedTokenRepository extends BaseRepository<BlacklistedToken, String> {
     public BlacklistedTokenRepository() {
@@ -67,14 +65,5 @@ public class BlacklistedTokenRepository extends BaseRepository<BlacklistedToken,
 
         token.setReason(rs.getString("reason"));
         return token;
-    }
-
-    @Override
-    protected List<BlacklistedToken> mapResultSetList(ResultSet rs) throws SQLException {
-        List<BlacklistedToken> tokens = new ArrayList<>();
-        while (rs.next()) {
-            tokens.add(mapResultSet(rs));
-        }
-        return tokens;
     }
 }

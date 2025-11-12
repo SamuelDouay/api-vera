@@ -2,18 +2,21 @@ package fr.github.vera.model;
 
 import fr.github.vera.database.Column;
 import fr.github.vera.database.Table;
+import jakarta.validation.constraints.NotBlank;
 
 @Table(name = "survey")
 public class Survey {
     @Column(name = "id", updatable = false)
     private Integer id;
     @Column(name = "name")
+    @NotBlank(message = "name cannot be blank")
     private String name;
     @Column(name = "anonymization")
     private String anonymization;
     @Column(name = "description")
     private String description;
     @Column(name = "id_user")
+    @NotBlank(message = "id_user cannot be blank")
     private Integer userId;
     @Column(name = "is_quiz")
     private boolean quiz;

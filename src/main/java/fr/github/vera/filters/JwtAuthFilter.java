@@ -1,7 +1,6 @@
 package fr.github.vera.filters;
 
 import fr.github.vera.Main;
-import fr.github.vera.response.ErrorResponse;
 import fr.github.vera.security.JwtService;
 import io.jsonwebtoken.Claims;
 import jakarta.annotation.Priority;
@@ -118,7 +117,7 @@ public class JwtAuthFilter implements ContainerRequestFilter {
     }
 
     private void abortWithUnauthorized(ContainerRequestContext context, String message) {
-        ErrorResponse errorResponse = new ErrorResponse(message);
+        fr.github.vera.response.Response<String> errorResponse = new fr.github.vera.response.Response<>(message);
         context.abortWith(Response.status(Response.Status.UNAUTHORIZED)
                 .entity(errorResponse)
                 .build());

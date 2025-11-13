@@ -1,6 +1,5 @@
 package fr.github.vera.exception;
 
-import fr.github.vera.response.ErrorResponse;
 import jakarta.validation.ConstraintViolationException;
 import jakarta.ws.rs.NotFoundException;
 import jakarta.ws.rs.WebApplicationException;
@@ -19,44 +18,45 @@ public class GlobalExceptionMapper implements ExceptionMapper<Exception> {
     public Response toResponse(Exception exception) {
         logger.error("Error caught: {}", exception.getMessage(), exception);
 
-        switch (exception) {
-            case ValidationException vaEx -> {
-                ErrorResponse errorResponse = new ErrorResponse(exception.getMessage());
-                return Response.status(vaEx.getStatusCode())
-                        .entity(errorResponse)
-                        .build();
-            }
-            case NotFoundException _ -> {
-                logger.warn("Route not found: {}", exception.getMessage());
-                return Response.status(Response.Status.NOT_FOUND)
-                        .entity(new ErrorResponse("Endpoint not found"))
-                        .build();
-            }
-            case ConstraintViolationException _ -> {
-                logger.warn("Validation error: {}", exception.getMessage());
-                return Response.status(Response.Status.BAD_REQUEST)
-                        .entity(new ErrorResponse("Invalid input data"))
-                        .build();
-            }
-            case WebApplicationException webEx -> {
-                int status = webEx.getResponse().getStatus();
-                String message = getCustomMessageForStatus(status);
-                logger.warn("Web application error: {} - {}", status, message);
-                return Response.status(status)
-                        .entity(new ErrorResponse(exception.getMessage()))
-                        .build();
-            }
-            default -> logger.error("Unhandled exception: ", exception);
-        }
-
-        // Generic error
-        return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
-                .entity(new ErrorResponse("Internal server error"))
+        ErrorResponse errorResponse = createErrorResponse(exception);
+        return Response.status(errorResponse.getStatus())
+                .entity(new fr.github.vera.response.Response<>(errorResponse.getMessage()))
                 .build();
     }
 
-    private String getCustomMessageForStatus(int status) {
-        return switch (status) {
+    private ErrorResponse createErrorResponse(Exception exception) {
+        return switch (exception) {
+            case ValidationException vaEx -> new ErrorResponse(vaEx.getStatusCode(), exception.getMessage());
+
+            case NotFoundException _ -> {
+                logger.warn("Route not found: {}", exception.getMessage());
+                yield new ErrorResponse(Response.Status.NOT_FOUND.getStatusCode(), "Endpoint not found");
+            }
+
+            case ConstraintViolationException _ -> {
+                logger.warn("Validation error: {}", exception.getMessage());
+                yield new ErrorResponse(Response.Status.BAD_REQUEST.getStatusCode(), "Invalid input data");
+            }
+
+            case WebApplicationException webEx -> {
+                int status = webEx.getResponse().getStatus();
+                String message = getCustomMessageForStatus(status, exception.getMessage());
+                logger.warn("Web application error: {} - {}", status, message);
+                yield new ErrorResponse(status, message);
+            }
+
+            default -> {
+                logger.error("Unhandled exception: ", exception);
+                yield new ErrorResponse(
+                        Response.Status.INTERNAL_SERVER_ERROR.getStatusCode(),
+                        "Internal server error"
+                );
+            }
+        };
+    }
+
+    private String getCustomMessageForStatus(int status, String defaultMessage) {
+        String message = switch (status) {
             case 400 -> "Bad request - invalid parameters";
             case 401 -> "Authentication required";
             case 403 -> "Access denied";
@@ -70,5 +70,20 @@ public class GlobalExceptionMapper implements ExceptionMapper<Exception> {
             case 503 -> "Service temporarily unavailable";
             default -> "An error occurred";
         };
+
+        // Utilise le message par défaut si plus spécifique
+        return defaultMessage != null && !defaultMessage.trim().isEmpty() ?
+                defaultMessage : message;
+    }
+
+    // Record pour encapsuler la réponse d'erreur
+    private record ErrorResponse(int status, String message) {
+        public int getStatus() {
+            return status;
+        }
+
+        public String getMessage() {
+            return message;
+        }
     }
 }

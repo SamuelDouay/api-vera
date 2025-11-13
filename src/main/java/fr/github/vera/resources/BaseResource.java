@@ -2,9 +2,8 @@ package fr.github.vera.resources;
 
 import fr.github.vera.exception.NotFoundException;
 import fr.github.vera.filters.Secured;
-import fr.github.vera.model.Count;
 import fr.github.vera.repository.IRepository;
-import fr.github.vera.response.CountResponse;
+import fr.github.vera.response.ListResponse;
 import fr.github.vera.response.Response;
 import fr.github.vera.services.BaseService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -18,21 +17,15 @@ import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.SecurityContext;
 import jakarta.ws.rs.core.UriInfo;
 
+import java.lang.reflect.Field;
 import java.net.URI;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
-import java.util.function.Function;
 
-public abstract class BaseResource<T, ID, R extends IRepository<T, ID>, RESPONSE, LIST_RESPONSE> {
+public abstract class BaseResource<T, ID, R extends IRepository<T, ID>> {
 
     protected abstract String getResourcePath();
 
     protected abstract BaseService<T, ID, R> getService();
-
-    protected abstract Function<T, RESPONSE> getResponseMapper();
-
-    protected abstract Function<List<T>, LIST_RESPONSE> getListResponseMapper();
 
     protected abstract String getResourceName();
 
@@ -59,11 +52,8 @@ public abstract class BaseResource<T, ID, R extends IRepository<T, ID>, RESPONSE
             @Context SecurityContext securityContext) {
 
         List<T> items = getService().getAll(limit, offset);
-        List<T> paginatedItems = applyPagination(items, limit, offset);
-        Map<String, Object> meta = createPaginationMeta(items.size(), offset, limit, paginatedItems.size());
-
-        LIST_RESPONSE response = getListResponseMapper().apply(paginatedItems);
-        return addMetadataToResponse(response, meta);
+        ListResponse<T> response = new ListResponse<>(items);
+        return jakarta.ws.rs.core.Response.ok(response).build();
     }
 
     @GET
@@ -82,8 +72,7 @@ public abstract class BaseResource<T, ID, R extends IRepository<T, ID>, RESPONSE
 
         T item = getService().getById(id)
                 .orElseThrow(() -> new NotFoundException(getResourceName() + " not found with ID: " + id));
-
-        RESPONSE response = getResponseMapper().apply(item);
+        Response<T> response = new Response<>(item);
         return jakarta.ws.rs.core.Response.ok(response).build();
     }
 
@@ -108,7 +97,7 @@ public abstract class BaseResource<T, ID, R extends IRepository<T, ID>, RESPONSE
             throw new NotFoundException(getResourceName() + " not found");
         }
 
-        RESPONSE response = getResponseMapper().apply(updatedItem);
+        Response<T> response = new Response<>(updatedItem);
         return jakarta.ws.rs.core.Response.ok(response).build();
     }
 
@@ -139,11 +128,11 @@ public abstract class BaseResource<T, ID, R extends IRepository<T, ID>, RESPONSE
     @Secured(adminOnly = true)
     @Operation(summary = "Récupérer le nombre total de ressources", description = "Retourne le nombre total de ressources")
     @ApiResponses({
-            @ApiResponse(responseCode = "200", description = "return resource count", content = @Content(schema = @Schema(implementation = CountResponse.class)))
+            @ApiResponse(responseCode = "200", description = "return resource count", content = @Content(schema = @Schema(implementation = Response.class)))
     })
     public jakarta.ws.rs.core.Response count() {
-        CountResponse countResponse = new CountResponse(new Count(getService().count()));
-        return jakarta.ws.rs.core.Response.ok(countResponse).build();
+        Response<Integer> response = new Response<>(getService().count());
+        return jakarta.ws.rs.core.Response.ok(response).build();
     }
 
     @POST
@@ -162,34 +151,39 @@ public abstract class BaseResource<T, ID, R extends IRepository<T, ID>, RESPONSE
 
         T createdItem = getService().create(entity);
 
-        RESPONSE response = getResponseMapper().apply(createdItem);
+        Response<T> response = new Response<>(createdItem);
         return jakarta.ws.rs.core.Response.status(jakarta.ws.rs.core.Response.Status.CREATED)
                 .entity(response)
                 .location(URI.create(getResourcePath() + "/" + getId(createdItem)))
                 .build();
     }
 
-    // Méthodes utilitaires
-    protected List<T> applyPagination(List<T> items, int limit, int offset) {
-        int start = Math.min(offset, items.size());
-        int end = Math.min(start + limit, items.size());
-        return items.subList(start, end);
+    protected ID getId(T entity) {
+        try {
+            // Recherche le champ "id" dans la classe et ses superclasses
+            Field idField = findIdField(entity.getClass());
+            idField.setAccessible(true);
+
+            @SuppressWarnings("unchecked")
+            ID id = (ID) idField.get(entity);
+            return id;
+
+        } catch (Exception e) {
+            throw new RuntimeException("Could not get ID from entity", e);
+        }
     }
 
-    protected Map<String, Object> createPaginationMeta(int total, int offset, int limit, int returned) {
-        Map<String, Object> meta = new HashMap<>();
-        meta.put("total", total);
-        meta.put("offset", offset);
-        meta.put("limit", limit);
-        meta.put("returned", returned);
-        return meta;
+    // Méthode utilitaire pour trouver le champ id dans la hiérarchie de classes
+    private Field findIdField(Class<?> clazz) {
+        try {
+            return clazz.getDeclaredField("id");
+        } catch (NoSuchFieldException e) {
+            // Si pas trouvé dans la classe actuelle, cherche dans la superclasse
+            Class<?> superClass = clazz.getSuperclass();
+            if (superClass != null && superClass != Object.class) {
+                return findIdField(superClass);
+            }
+            throw new RuntimeException("No 'id' field found in class hierarchy for " + clazz.getSimpleName(), e);
+        }
     }
-
-    protected jakarta.ws.rs.core.Response addMetadataToResponse(Object response, Map<String, Object> meta) {
-        // Implémentation spécifique selon votre structure de réponse
-        // Cette méthode peut être override dans les classes filles
-        return jakarta.ws.rs.core.Response.ok(response).build();
-    }
-
-    protected abstract ID getId(T entity);
 }

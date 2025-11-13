@@ -4,8 +4,7 @@ import fr.github.vera.exception.UserNotFoundException;
 import fr.github.vera.filters.Secured;
 import fr.github.vera.model.User;
 import fr.github.vera.repository.IUserRepository;
-import fr.github.vera.response.UserListResponse;
-import fr.github.vera.response.UserResponse;
+import fr.github.vera.response.Response;
 import fr.github.vera.services.BaseService;
 import fr.github.vera.services.UserService;
 import fr.github.vera.services.UserValidationService;
@@ -15,14 +14,11 @@ import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.SecurityContext;
 
-import java.util.List;
-import java.util.function.Function;
-
 @Path("/users")
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)
 @Tag(name = "Users", description = "Gestion des utilisateurs")
-public class UserResource extends BaseResource<User, Integer, IUserRepository, UserResponse, UserListResponse> {
+public class UserResource extends BaseResource<User, Integer, IUserRepository> {
     private final UserService userService = new UserService();
     private final UserValidationService validationService = new UserValidationService(userService);
 
@@ -34,16 +30,6 @@ public class UserResource extends BaseResource<User, Integer, IUserRepository, U
     @Override
     protected BaseService<User, Integer, IUserRepository> getService() {
         return userService;
-    }
-
-    @Override
-    protected Function<User, UserResponse> getResponseMapper() {
-        return UserResponse::new;
-    }
-
-    @Override
-    protected Function<List<User>, UserListResponse> getListResponseMapper() {
-        return UserListResponse::new;
     }
 
     @Override
@@ -71,11 +57,6 @@ public class UserResource extends BaseResource<User, Integer, IUserRepository, U
         validationService.validateUserId(id);
     }
 
-    @Override
-    protected Integer getId(User entity) {
-        return entity.getId();
-    }
-
     // Méthodes spécifiques à User
     @GET
     @Path("/email")
@@ -89,7 +70,7 @@ public class UserResource extends BaseResource<User, Integer, IUserRepository, U
         User user = userService.getUserByEmail(email)
                 .orElseThrow(() -> new UserNotFoundException("User not found"));
 
-        UserResponse response = new UserResponse(user);
+        Response<User> response = new Response<>(user);
         return jakarta.ws.rs.core.Response.ok(response).build();
     }
 }

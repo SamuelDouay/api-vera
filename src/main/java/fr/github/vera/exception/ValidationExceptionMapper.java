@@ -1,6 +1,5 @@
 package fr.github.vera.exception;
 
-import fr.github.vera.response.ErrorResponse;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.ext.ExceptionMapper;
 import jakarta.ws.rs.ext.Provider;
@@ -14,8 +13,7 @@ public class ValidationExceptionMapper implements ExceptionMapper<ValidationExce
     @Override
     public Response toResponse(ValidationException exception) {
         log.warn("Validation error: {}", exception.getMessage());
-
-        ErrorResponse errorResponse = new ErrorResponse(exception.getMessage());
+        fr.github.vera.response.Response<String> errorResponse = new fr.github.vera.response.Response<>(exception.getMessage());
         return Response.status(exception.getStatusCode())
                 .entity(errorResponse)
                 .build();

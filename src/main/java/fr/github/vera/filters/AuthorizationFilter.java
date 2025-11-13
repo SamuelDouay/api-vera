@@ -1,6 +1,5 @@
 package fr.github.vera.filters;
 
-import fr.github.vera.response.ErrorResponse;
 import jakarta.annotation.Priority;
 import jakarta.ws.rs.Priorities;
 import jakarta.ws.rs.container.ContainerRequestContext;
@@ -43,8 +42,7 @@ public class AuthorizationFilter implements ContainerRequestFilter {
 
                 log.warn("Accès admin refusé pour l'utilisateur: {}", currentUser);
 
-                ErrorResponse
-                        errorResponse = new ErrorResponse(errorMessage);
+                fr.github.vera.response.Response<String> errorResponse = new fr.github.vera.response.Response<>(errorMessage);
                 requestContext.abortWith(Response.status(Response.Status.FORBIDDEN)
                         .entity(errorResponse)
                         .build());

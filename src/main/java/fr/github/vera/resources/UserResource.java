@@ -2,174 +2,87 @@ package fr.github.vera.resources;
 
 import fr.github.vera.exception.UserNotFoundException;
 import fr.github.vera.filters.Secured;
-import fr.github.vera.model.Count;
 import fr.github.vera.model.User;
-import fr.github.vera.response.CountResponse;
-import fr.github.vera.response.Response;
+import fr.github.vera.repository.IUserRepository;
 import fr.github.vera.response.UserListResponse;
 import fr.github.vera.response.UserResponse;
+import fr.github.vera.services.BaseService;
 import fr.github.vera.services.UserService;
 import fr.github.vera.services.UserValidationService;
-import io.swagger.v3.oas.annotations.Operation;
-import io.swagger.v3.oas.annotations.media.Content;
-import io.swagger.v3.oas.annotations.media.Schema;
-import io.swagger.v3.oas.annotations.responses.ApiResponse;
-import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import jakarta.validation.Valid;
 import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.SecurityContext;
 
-import java.net.URI;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
+import java.util.function.Function;
 
 @Path("/users")
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)
 @Tag(name = "Users", description = "Gestion des utilisateurs")
-public class UserResource {
+public class UserResource extends BaseResource<User, Integer, IUserRepository, UserResponse, UserListResponse> {
     private final UserService userService = new UserService();
     private final UserValidationService validationService = new UserValidationService(userService);
 
-    @GET
-    @Secured(adminOnly = true)
-    @Operation(
-            summary = "Récupérer tous les utilisateurs",
-            description = "Retourne la liste de tous les utilisateurs")
-    @ApiResponse(
-            responseCode = "200",
-            description = "Users retrieved successfully",
-            content = @Content(schema = @Schema(implementation = UserListResponse.class))
-    )
-    public jakarta.ws.rs.core.Response getAllUsers(@QueryParam("limit") @DefaultValue("100") int limit,
-                                                   @QueryParam("offset") @DefaultValue("0") int offset) {
-        List<User> users = userService.getAllUsers(limit, offset);
-        List<User> paginatedUsers = applyPagination(users, limit, offset);
-        Map<String, Object> meta = createPaginationMeta(users.size(), offset, limit, paginatedUsers.size());
-        UserListResponse response = new UserListResponse(paginatedUsers, meta);
-        return jakarta.ws.rs.core.Response.ok(response).build();
+    @Override
+    protected String getResourcePath() {
+        return "/users";
     }
 
-    @GET
-    @Path("/{id}")
-    @Secured()
-    @Operation(
-            summary = "Récupérer un utilisateur par ID",
-            description = "Retourne un utilisateur spécifique par son ID"
-    )
-    @ApiResponses({
-            @ApiResponse(
-                    responseCode = "200",
-                    description = "Users retrieved successfully",
-                    content = @Content(schema = @Schema(implementation = UserResponse.class))
-            ),
-            @ApiResponse(
-                    responseCode = "404",
-                    description = "User not found",
-                    content = @Content(schema = @Schema(implementation = Response.class))
-            )
-    })
-    public jakarta.ws.rs.core.Response getUserById(@PathParam("id") Integer id, @Context SecurityContext securityContext) {
+    @Override
+    protected BaseService<User, Integer, IUserRepository> getService() {
+        return userService;
+    }
 
+    @Override
+    protected Function<User, UserResponse> getResponseMapper() {
+        return UserResponse::new;
+    }
+
+    @Override
+    protected Function<List<User>, UserListResponse> getListResponseMapper() {
+        return UserListResponse::new;
+    }
+
+    @Override
+    protected String getResourceName() {
+        return "User";
+    }
+
+    @Override
+    protected void validateAccess(Integer id, SecurityContext securityContext) {
         validationService.validateUserAccess(id, null, securityContext, null);
-
-        User user = userService.getUserById(id)
-                .orElseThrow(() -> new UserNotFoundException("User not found with ID: " + id));
-
-        UserResponse response = new UserResponse(user);
-        return jakarta.ws.rs.core.Response.ok(response).build();
     }
 
-    @PUT
-    @Path("/{id}")
-    @Secured()
-    @Operation(
-            summary = "Mettre à jour un utilisateur",
-            description = "Met à jour un utilisateur existant"
-    )
-    @ApiResponses({
-            @ApiResponse(
-                    responseCode = "200",
-                    description = "User updated successfully",
-                    content = @Content(schema = @Schema(implementation = UserResponse.class))
-            ),
-            @ApiResponse(
-                    responseCode = "404",
-                    description = "User not found",
-                    content = @Content(schema = @Schema(implementation = Response.class))
-            )
-    })
-    public jakarta.ws.rs.core.Response updateUser(@PathParam("id") Integer id, @Valid User user, @Context SecurityContext securityContext) {
-
-        validationService.validateUserAccess(id, null, securityContext, user);
-
-        User updatedUser = userService.updateUser(id, user);
-        if (updatedUser == null) {
-            throw new UserNotFoundException("User not found");
-        }
-        UserResponse response = new UserResponse(updatedUser);
-        return jakarta.ws.rs.core.Response.ok(response).build();
+    @Override
+    protected void preCreate(User entity, SecurityContext securityContext) {
+        validationService.validateEmail(entity.getEmail());
     }
 
-    @DELETE
-    @Path("/{id}")
-    @Secured(adminOnly = true)
-    @Operation(
-            summary = "Supprimer un utilisateur",
-            description = "Supprime un utilisateur par son ID"
-    )
-    @ApiResponses({
-            @ApiResponse(
-                    responseCode = "204",
-                    description = "User deleted successfully"
-            ),
-            @ApiResponse(
-                    responseCode = "404",
-                    description = "User not found",
-                    content = @Content(schema = @Schema(implementation = Response.class))
-            )
-    })
-    public jakarta.ws.rs.core.Response deleteUser(@PathParam("id") Integer id) {
+    @Override
+    protected void preUpdate(Integer id, User entity, SecurityContext securityContext) {
+        validationService.validateUserAccess(id, null, securityContext, entity);
+    }
 
+    @Override
+    protected void preDelete(Integer id, SecurityContext securityContext) {
         validationService.validateUserId(id);
-
-        boolean deleted = userService.deleteUser(id);
-        if (!deleted) {
-            throw new UserNotFoundException("User not found");
-        }
-
-        return jakarta.ws.rs.core.Response.noContent().build();
     }
 
+    @Override
+    protected Integer getId(User entity) {
+        return entity.getId();
+    }
+
+    // Méthodes spécifiques à User
     @GET
     @Path("/email")
     @Secured()
-    @Operation(
-            summary = "Récupérer un utilisateur par email",
-            description = "Retourne un utilisateur spécifique par son email"
-    )
-    @ApiResponses({
-            @ApiResponse(
-                    responseCode = "200",
-                    description = "Users retrieved successfully",
-                    content = @Content(schema = @Schema(implementation = UserResponse.class))
-            ),
-            @ApiResponse(
-                    responseCode = "400",
-                    description = "Invalid user email",
-                    content = @Content(schema = @Schema(implementation = Response.class))
-            ),
-            @ApiResponse(
-                    responseCode = "404",
-                    description = "User not found",
-                    content = @Content(schema = @Schema(implementation = Response.class))
-            )
-    })
-    public jakarta.ws.rs.core.Response getUserByEmail(@QueryParam("email") String email, @Context SecurityContext securityContext) {
+    public jakarta.ws.rs.core.Response getUserByEmail(
+            @QueryParam("email") String email,
+            @Context SecurityContext securityContext) {
 
         validationService.validateUserAccess(0, email, securityContext, null);
 
@@ -178,70 +91,5 @@ public class UserResource {
 
         UserResponse response = new UserResponse(user);
         return jakarta.ws.rs.core.Response.ok(response).build();
-    }
-
-    @GET
-    @Path("/count")
-    @Secured(adminOnly = true)
-    @Operation(
-            summary = "Récupérer le nombre total d'utilisateurs",
-            description = "Retourne le nombre total d'utilisateur"
-    )
-    @ApiResponses({
-            @ApiResponse(
-                    responseCode = "200",
-                    description = "return user size",
-                    content = @Content(schema = @Schema(implementation = CountResponse.class))
-            )
-    })
-    public jakarta.ws.rs.core.Response count() {
-        CountResponse countResponse = new CountResponse(new Count(userService.count()));
-        return jakarta.ws.rs.core.Response.ok(countResponse).build();
-    }
-
-    @POST
-    @Secured(adminOnly = true)
-    @Operation(
-            summary = "Créer un nouvel utilisateur",
-            description = "Crée un nouvel utilisateur avec les données fournies"
-    )
-    @ApiResponses({
-            @ApiResponse(
-                    responseCode = "201",
-                    description = "User created successfully",
-                    content = @Content(schema = @Schema(implementation = UserResponse.class))
-            ),
-            @ApiResponse(
-                    responseCode = "400",
-                    description = "Invalid user data",
-                    content = @Content(schema = @Schema(implementation = Response.class))
-            )
-    })
-    public jakarta.ws.rs.core.Response createUser(@Valid User user) {
-
-        validationService.validateEmail(user.getEmail());
-
-        User createdUser = userService.createUser(user);
-
-        UserResponse response = new UserResponse(createdUser);
-        return jakarta.ws.rs.core.Response.status(jakarta.ws.rs.core.Response.Status.CREATED)
-                .entity(response)
-                .location(URI.create("/users/" + createdUser.getId()))
-                .build();
-    }
-
-    private List<User> applyPagination(List<User> users, int limit, int offset) {
-        int start = Math.min(offset, users.size());
-        int end = Math.min(start + limit, users.size());
-        return users.subList(start, end);
-    }
-
-    private Map<String, Object> createPaginationMeta(int total, int offset, int limit, int returned) {
-        Map<String, Object> meta = new HashMap<>();
-        meta.put("total", total);
-        meta.put("offset", offset);
-        meta.put("limit", limit);
-        meta.put("returned", returned);
-        return meta;
     }
 }

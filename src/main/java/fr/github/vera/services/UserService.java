@@ -4,42 +4,15 @@ import fr.github.vera.model.User;
 import fr.github.vera.repository.IUserRepository;
 import fr.github.vera.repository.UserRepository;
 
-import java.util.List;
 import java.util.Optional;
 
-public class UserService {
-    private final IUserRepository userRepository;
+public class UserService extends BaseService<User, Integer, IUserRepository> {
 
     public UserService() {
-        this.userRepository = new UserRepository();
-    }
-
-    public List<User> getAllUsers(int limit, int offset) {
-        return userRepository.findAll(limit, offset);
-    }
-
-    public Optional<User> getUserById(Integer id) {
-        return userRepository.findById(id);
-    }
-
-    public User createUser(User user) {
-        return userRepository.save(user);
-    }
-
-    public User updateUser(Integer id, User user) {
-        user.setId(id);
-        return userRepository.save(user);
-    }
-
-    public boolean deleteUser(Integer id) {
-        return userRepository.delete(id);
-    }
-
-    public int count() {
-        return userRepository.count();
+        super(new UserRepository());
     }
 
     public Optional<User> getUserByEmail(String email) {
-        return userRepository.findByEmail(email);
+        return repository.findByEmail(email);
     }
 }

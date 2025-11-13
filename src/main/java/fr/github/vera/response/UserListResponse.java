@@ -12,6 +12,10 @@ public class UserListResponse extends Response<List<User>> {
         super(data, meta);
     }
 
+    public UserListResponse(List<User> users) {
+        super(users);
+    }
+
     @Schema(description = "Liste des utilisateurs", type = "array")
     @Override
     public List<User> getData() {

@@ -12,6 +12,10 @@ public class SurveyListResponse extends Response<List<Survey>> {
         super(data, meta);
     }
 
+    public SurveyListResponse(List<Survey> surveys) {
+        super(surveys);
+    }
+
     @Schema(description = "Liste des survey", type = "array")
     @Override
     public List<Survey> getData() {

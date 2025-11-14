@@ -1,4 +1,4 @@
-package fr.github.vera.model;
+package fr.github.vera.model.authentification;
 
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;

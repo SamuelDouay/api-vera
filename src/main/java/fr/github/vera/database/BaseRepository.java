@@ -207,6 +207,9 @@ public abstract class BaseRepository<T, ID> extends BaseRequest implements IRepo
         } else if (type == java.time.LocalDate.class) {
             java.sql.Date date = rs.getDate(columnName);
             return date != null ? date.toLocalDate() : null;
+        } else if (type == java.time.Instant.class) {
+            java.sql.Timestamp timestamp = rs.getTimestamp(columnName);
+            return timestamp != null ? timestamp.toInstant() : null;
         } else {
             return rs.getObject(columnName);
         }

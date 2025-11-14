@@ -1,4 +1,6 @@
-package fr.github.vera.model;
+package fr.github.vera.model.authentification;
+
+import fr.github.vera.model.User;
 
 public class AuthResponse {
     private String token;

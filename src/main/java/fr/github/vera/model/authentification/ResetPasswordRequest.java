@@ -1,4 +1,4 @@
-package fr.github.vera.model;
+package fr.github.vera.model.authentification;
 
 public class ResetPasswordRequest {
     private String email;
@@ -6,7 +6,7 @@ public class ResetPasswordRequest {
     private String resetToken;
 
     public ResetPasswordRequest() {
-        
+
     }
 
     public ResetPasswordRequest(String email, String newPassword, String resetToken) {

@@ -1,12 +1,21 @@
 package fr.github.vera.model;
 
+import fr.github.vera.database.Column;
+import fr.github.vera.database.Table;
+
 import java.time.Instant;
 
+@Table(name = "blacklisted_tokens")
 public class BlacklistedToken {
+    @Column(name = "token")
     private String token;
+    @Column(name = "expires_at")
     private Instant expiresAt;
+    @Column(name = "created_at")
     private Instant createdAt;
+    @Column(name = "user_id")
     private Integer userId;
+    @Column(name = "reason")
     private String reason;
 
     public BlacklistedToken() {

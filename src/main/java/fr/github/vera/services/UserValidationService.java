@@ -13,9 +13,9 @@ public record UserValidationService(UserService userService) {
         validateUserIdIfPresent(id);
         validateEmailIfPresent(email);
 
-        User currentUser = getCurrentUser(securityContext);
-
-        if (!isAdminUser(securityContext)) {
+        // Si l'utilisateur est admin (vérifié par le filtre @Secured), on skip les validations spécifiques
+        if (!securityContext.isUserInRole("admin")) {
+            User currentUser = getCurrentUser(securityContext);
             validateNonAdminAccess(id, email, currentUser, userToUpdate);
         }
     }
@@ -47,15 +47,63 @@ public record UserValidationService(UserService userService) {
                 .orElseThrow(() -> new UserNotFoundException("Current user not found"));
     }
 
-    // Vérification des droits administrateur
-    public boolean isAdminUser(SecurityContext securityContext) {
-        return securityContext.isUserInRole("admin");
-    }
-
     // Validation du format d'email
     public boolean isValidEmailFormat(String email) {
         String emailRegex = "^[A-Za-z0-9+_.-]+@(.+)$";
         return email != null && email.matches(emailRegex);
+    }
+
+    // Validation pour la création d'utilisateur
+    public void validateUserCreation(User user) {
+        if (user == null) {
+            throw new InvalidDataException("User data cannot be null");
+        }
+        validateEmail(user.getEmail());
+        validateName(user.getName(), "Name");
+        validateName(user.getSurname(), "Surname");
+        validatePassword(user.getPassword());
+    }
+
+    // Validation pour la mise à jour d'utilisateur
+    public void validateUserUpdate(Integer id, User user, SecurityContext securityContext) {
+        validateUserId(id);
+        validateUserAccess(id, null, securityContext, user);
+
+        if (user.getEmail() != null) {
+            validateEmail(user.getEmail());
+            // Vérifier si l'email existe déjà pour un autre utilisateur
+            if (userService.checkEmailExistsForOtherUser(user.getEmail(), id)) {
+                throw new InvalidDataException("Email already exists for another user");
+            }
+        }
+
+        if (user.getName() != null) {
+            validateName(user.getName(), "Name");
+        }
+
+        if (user.getSurname() != null) {
+            validateName(user.getSurname(), "Surname");
+        }
+    }
+
+    // Validation du nom/prénom
+    private void validateName(String name, String fieldName) {
+        if (name == null || name.trim().isEmpty()) {
+            throw new InvalidDataException(fieldName + " cannot be empty");
+        }
+        if (name.length() > 255) {
+            throw new InvalidDataException(fieldName + " cannot exceed 255 characters");
+        }
+    }
+
+    // Validation du mot de passe
+    private void validatePassword(String password) {
+        if (password == null || password.trim().isEmpty()) {
+            throw new InvalidDataException("Password cannot be empty");
+        }
+        if (password.length() < 6) {
+            throw new InvalidDataException("Password must be at least 6 characters long");
+        }
     }
 
     // Méthodes privées pour une fonctionnalité spécifique chacune
@@ -103,8 +151,14 @@ public record UserValidationService(UserService userService) {
     }
 
     private void validateRoleChange(User userToUpdate, User currentUser) {
-        if (userToUpdate.isAdmin() && !currentUser.isAdmin())
+        // Un non-admin ne peut pas se donner les droits admin
+        if (userToUpdate.isAdmin() && !currentUser.isAdmin()) {
             throw new AccessDeniedException("Access denied - you cannot change your role");
+        }
+        // Un non-admin ne peut pas modifier le rôle d'un autre utilisateur
+        if (!currentUser.getId().equals(userToUpdate.getId()) && userToUpdate.isAdmin() != currentUser.isAdmin()) {
+            throw new AccessDeniedException("Access denied - you cannot change other users' roles");
+        }
     }
 
     private void validateEmailUpdate(User userToUpdate) {

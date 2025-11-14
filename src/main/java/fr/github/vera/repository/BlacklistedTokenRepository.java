@@ -4,9 +4,7 @@ import fr.github.vera.database.BaseRepository;
 import fr.github.vera.model.BlacklistedToken;
 
 import java.sql.ResultSet;
-import java.sql.SQLException;
 import java.sql.Timestamp;
-import java.time.Instant;
 
 public class BlacklistedTokenRepository extends BaseRepository<BlacklistedToken, String> {
     public BlacklistedTokenRepository() {
@@ -47,23 +45,5 @@ public class BlacklistedTokenRepository extends BaseRepository<BlacklistedToken,
                 false,
                 "CHECK TOKEN EXISTS",
                 token);
-    }
-
-    @Override
-    protected BlacklistedToken mapResultSet(ResultSet rs) throws SQLException {
-        BlacklistedToken token = new BlacklistedToken();
-        token.setToken(rs.getString("token"));
-
-        Timestamp expiresAt = rs.getTimestamp("expires_at");
-        token.setExpiresAt(expiresAt != null ? expiresAt.toInstant() : null);
-
-        Timestamp createdAt = rs.getTimestamp("created_at");
-        token.setCreateAt(createdAt != null ? createdAt.toInstant() : Instant.now());
-
-        token.setIdUser(rs.getInt("user_id"));
-        if (rs.wasNull()) token.setIdUser(null);
-
-        token.setReason(rs.getString("reason"));
-        return token;
     }
 }

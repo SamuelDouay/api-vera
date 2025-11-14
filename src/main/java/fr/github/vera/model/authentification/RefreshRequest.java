@@ -1,4 +1,4 @@
-package fr.github.vera.model;
+package fr.github.vera.model.authentification;
 
 public class RefreshRequest {
     private String refreshToken;

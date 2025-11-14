@@ -3,7 +3,7 @@ package fr.github.vera.resources;
 import fr.github.vera.Main;
 import fr.github.vera.filters.Public;
 import fr.github.vera.filters.Secured;
-import fr.github.vera.model.*;
+import fr.github.vera.model.authentification.*;
 import fr.github.vera.response.Response;
 import fr.github.vera.security.JwtService;
 import fr.github.vera.services.AuthService;

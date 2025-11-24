@@ -7,6 +7,7 @@ import fr.github.vera.model.User;
 import fr.github.vera.repository.IUserRepository;
 import fr.github.vera.response.ListResponse;
 import fr.github.vera.response.Response;
+import fr.github.vera.security.JwtService;
 import fr.github.vera.services.BaseService;
 import fr.github.vera.services.UserService;
 import fr.github.vera.services.UserValidationService;
@@ -26,6 +27,7 @@ import java.util.List;
 public class UserResource extends BaseResource<User, Integer, IUserRepository> {
     private final UserService userService = new UserService();
     private final UserValidationService validationService = new UserValidationService(userService);
+    private final JwtService jwtService = new JwtService();
 
     @Override
     protected String getResourcePath() {
@@ -86,6 +88,26 @@ public class UserResource extends BaseResource<User, Integer, IUserRepository> {
     }
 
     // === NOUVEAUX ENDPOINTS UTILITAIRES ===
+
+    @GET
+    @Path("/me")
+    @Secured()
+    @Operation(summary = "Récupérer les informations de l'utilisateur connecté")
+    public jakarta.ws.rs.core.Response getCurrentUser(
+            @Context SecurityContext securityContext, @HeaderParam("Authorization") String authorizationHeader) {
+
+        // Extraire le token du header Authorization
+        String token = extractTokenFromHeader(authorizationHeader);
+
+        // Récupérer l'ID utilisateur depuis le token
+        Integer userId = jwtService.extractUserIdFromToken(token);
+
+        User user = userService.getById(userId)
+                .orElseThrow(() -> new UserNotFoundException("User not found"));
+
+        Response<User> response = new Response<>(user);
+        return jakarta.ws.rs.core.Response.ok(response).build();
+    }
 
     @GET
     @Path("/search")

@@ -42,6 +42,13 @@ public abstract class BaseResource<T, ID, R extends IRepository<T, ID>> {
     protected void validateAccess(ID id, SecurityContext securityContext) {
     }
 
+    protected String extractTokenFromHeader(String authorizationHeader) {
+        if (authorizationHeader == null || !authorizationHeader.startsWith("Bearer ")) {
+            throw new NotAuthorizedException("Authorization header missing or invalid");
+        }
+        return authorizationHeader.substring(7); // Retire "Bearer "
+    }
+
     @GET
     @Secured(adminOnly = true)
     @Operation(summary = "Récupérer toutes les ressources", description = "Retourne la liste de toutes les ressources")

@@ -62,7 +62,7 @@ public class JwtService {
         return validateToken(token).getSubject();
     }
 
-    private Integer extractUserIdFromToken(String token) {
+    public Integer extractUserIdFromToken(String token) {
         try {
             Claims claims = new JwtService().validateToken(token);
             return claims.get("userId", Integer.class);

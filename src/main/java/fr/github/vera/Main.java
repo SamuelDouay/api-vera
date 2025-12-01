@@ -13,12 +13,13 @@ import java.net.URI;
 
 public class Main {
     private static final Logger logger = LogManager.getLogger(Main.class);
-    private static final String BASE_URI = "http://localhost:8080/api/";
+    private static final String BASE_URI = "http://0.0.0.0:8080/";
     private static TokenBlacklistService tokenBlacklistService;
 
     public static void main(String[] args) {
         HttpServer server = null;
         DatabaseManager databaseManager = DatabaseManager.getInstance();
+        final Object sync = new Object();
 
         try {
             // 1. Initialiser le pool de connexions
@@ -52,13 +53,20 @@ public class Main {
             logger.info("=".repeat(60));
             logger.info("✓ Serveur démarré avec succès!");
             logger.info("✓ API disponible à: {}", BASE_URI);
-            logger.info("✓ Swagger UI: {}swagger-ui/", BASE_URI);
-            logger.info("✓ Health check: {}admin/health", BASE_URI);
+            logger.info("✓ Swagger UI: {}api/swagger-ui/", BASE_URI);
+            logger.info("✓ Health check: {}api/admin/health", BASE_URI);
             logger.info("=".repeat(60));
-            logger.info("Appuyez sur ENTRÉE pour arrêter le serveur...");
 
-            // Attendre l'entrée utilisateur
-            System.in.read();
+            Runtime.getRuntime().addShutdownHook(new Thread(() -> {
+                logger.info("Signal d'arrêt reçu...");
+                synchronized (sync) {
+                    sync.notifyAll();
+                }
+            }));
+
+            synchronized (sync) {
+                sync.wait();
+            }
 
         } catch (Exception e) {
             logger.error("Erreur fatale lors du démarrage", e);

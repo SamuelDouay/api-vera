@@ -6,10 +6,11 @@ import fr.github.vera.config.ConfigProperties;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import java.io.BufferedReader;
 import java.io.FileNotFoundException;
-import java.net.URL;
-import java.nio.file.Files;
-import java.nio.file.Paths;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.nio.charset.StandardCharsets;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.ArrayList;
@@ -17,7 +18,7 @@ import java.util.List;
 
 public class DatabaseManager {
     private static final ConfigProperties CONFIG_PROPERTIES = ConfigProperties.getInstance();
-    private static final Logger logger = LogManager.getLogger();
+    private static final Logger logger = LogManager.getLogger(DatabaseManager.class);
     private static final Object lock = new Object();
     // Singleton instance
     private static volatile DatabaseManager instance;
@@ -308,11 +309,25 @@ public class DatabaseManager {
 
     private String loadScriptFromResources(String path) {
         try {
-            URL resource = getClass().getResource(path);
-            if (resource == null) {
-                throw new FileNotFoundException("Script SQL non trouvé: " + path);
+            // Utilise getResourceAsStream au lieu de getResource
+            InputStream inputStream = getClass().getResourceAsStream(path);
+            if (inputStream == null) {
+                // Essaye aussi avec le ClassLoader
+                inputStream = getClass().getClassLoader().getResourceAsStream(path);
+                if (inputStream == null) {
+                    throw new FileNotFoundException("Script SQL non trouvé dans les ressources: " + path);
+                }
             }
-            return new String(Files.readAllBytes(Paths.get(resource.toURI())));
+
+            // Lit le contenu depuis l'InputStream
+            try (BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream, StandardCharsets.UTF_8))) {
+                StringBuilder content = new StringBuilder();
+                String line;
+                while ((line = reader.readLine()) != null) {
+                    content.append(line).append("\n");
+                }
+                return content.toString();
+            }
         } catch (Exception e) {
             throw new RuntimeException("Impossible de charger le script SQL: " + path, e);
         }

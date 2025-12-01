@@ -94,7 +94,8 @@ public abstract class BaseRepository<T, ID> extends BaseRequest implements IRepo
                     } else if (value != null && columnAnnotation.updatable()) {
                         builder.set(columnName, value);
                     }
-                } catch (IllegalAccessException _) {
+                } catch (IllegalAccessException e) {
+                    logger.error(e.getMessage());
                 }
             }
         }
@@ -131,7 +132,8 @@ public abstract class BaseRepository<T, ID> extends BaseRequest implements IRepo
                     if (value != null) {
                         builder.set(columnAnnotation.name(), value);
                     }
-                } catch (IllegalAccessException _) {
+                } catch (IllegalAccessException e) {
+                    logger.error(e.getMessage());
                 }
             }
         }
@@ -175,7 +177,8 @@ public abstract class BaseRepository<T, ID> extends BaseRequest implements IRepo
                     try {
                         Object value = getValueFromResultSet(rs, columnName, field.getType());
                         field.set(entity, value);
-                    } catch (SQLException _) {
+                    } catch (SQLException e) {
+                        logger.error(e.getMessage());
                     }
                 }
             }

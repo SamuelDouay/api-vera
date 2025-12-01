@@ -28,13 +28,13 @@ public class GlobalExceptionMapper implements ExceptionMapper<Exception> {
         return switch (exception) {
             case ValidationException vaEx -> new ErrorResponse(vaEx.getStatusCode(), exception.getMessage());
 
-            case NotFoundException _ -> {
-                logger.warn("Route not found: {}", exception.getMessage());
+            case NotFoundException e -> {
+                logger.warn("Route not found: {}", e.getMessage());
                 yield new ErrorResponse(Response.Status.NOT_FOUND.getStatusCode(), "Endpoint not found");
             }
 
-            case ConstraintViolationException _ -> {
-                logger.warn("Validation error: {}", exception.getMessage());
+            case ConstraintViolationException e -> {
+                logger.warn("Validation error: {}", e.getMessage());
                 yield new ErrorResponse(Response.Status.BAD_REQUEST.getStatusCode(), "Invalid input data");
             }
 

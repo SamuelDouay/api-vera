@@ -1,7 +1,5 @@
 # API Documentation - VERA Survey Platform
 
-# API Documentation - VERA Survey Platform
-
 ## Overview
 
 VERA is a high-performance survey and quiz management platform built with modern Java technologies. The API provides

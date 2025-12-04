@@ -1,5 +1,6 @@
 package fr.github.vera.security;
 
+import fr.github.vera.config.ConfigProperties;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.ExpiredJwtException;
 import io.jsonwebtoken.JwtException;
@@ -12,7 +13,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 public class JwtService {
-    private static final String SECRET = "Vahgtjj8PN2cFjtEfxkm6QvIid4acyrGPB+N60dG6Wo5l9Rd7Wjnc+OnIokMoyoWh++YJZKzg1CsE2fabQ+Hlc1JEB09FBua";
+    private static final String SECRET = ConfigProperties.getInstance().getProperty("secret");
     private static final long ACCESS_TOKEN_VALIDITY = 3600000; // 1 heure
     private static final long REFRESH_TOKEN_VALIDITY = 604800000; // 7 jours
     private final SecretKey secretKey;

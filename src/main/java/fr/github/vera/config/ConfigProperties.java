@@ -32,6 +32,7 @@ public class ConfigProperties {
             String defaultValue = parts.length > 1 ? parts[1] : "";
 
             // Priorité : variable d'environnement > valeur par défaut
+            logger.info(System.getenv(varName));
             String envValue = System.getenv(varName);
             return envValue != null ? envValue : defaultValue;
         }
@@ -42,6 +43,8 @@ public class ConfigProperties {
         try {
             this.properties.load(getClass().getResourceAsStream("/setting/database.properties"));
             logger.debug("Load database properties file");
+            this.properties.load(getClass().getResourceAsStream("/setting/app.properties"));
+            logger.debug("Load app properties file");
 
             for (String key : this.properties.stringPropertyNames()) {
                 String value = this.properties.getProperty(key);

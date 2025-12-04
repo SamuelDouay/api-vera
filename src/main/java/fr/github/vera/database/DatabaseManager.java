@@ -300,7 +300,7 @@ public class DatabaseManager {
         }
 
         // Ajouter la dernière commande si elle existe
-        if (currentCommand.length() > 0) {
+        if (!currentCommand.isEmpty()) {
             commands.add(currentCommand.toString());
         }
 

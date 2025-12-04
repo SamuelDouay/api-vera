@@ -9,17 +9,17 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
-public abstract class BaseRepository<T, ID> extends BaseRequest implements IRepository<T, ID> {
+public abstract class BaseRepository<T, I> extends BaseRequest implements IRepository<T, I> {
     protected final String tableName;
     protected final Class<T> entityClass;
 
-    public BaseRepository(String tableName, Class<T> entityClass) {
+    protected BaseRepository(String tableName, Class<T> entityClass) {
         this.tableName = tableName;
         this.entityClass = entityClass;
     }
 
     @Override
-    public Optional<T> findById(ID id) {
+    public Optional<T> findById(I id) {
         String sql = "SELECT * FROM " + tableName + " WHERE id = ?";
         return executeQueryWithParams(sql, rs -> rs.next() ? Optional.of(mapResultSet(rs)) : Optional.empty(), Optional.empty(), "GET BY ID " + tableName, id);
     }
@@ -38,7 +38,7 @@ public abstract class BaseRepository<T, ID> extends BaseRequest implements IRepo
     }
 
     @Override
-    public boolean delete(ID id) {
+    public boolean delete(I id) {
         String sql = "DELETE FROM " + tableName + " WHERE id = ?";
         return executeUpdate(sql, "DELETE " + tableName.toUpperCase(), id) != 0;
     }

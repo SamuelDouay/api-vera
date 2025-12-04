@@ -2,8 +2,11 @@ package fr.github.vera.security;
 
 import de.mkammerer.argon2.Argon2;
 import de.mkammerer.argon2.Argon2Factory;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 public class PasswordEncoder {
+    private static final Logger LOGGER = LogManager.getLogger(PasswordEncoder.class);
     private static final int ITERATIONS = 10;     // Nombre d'itérations
     private static final int MEMORY = 65536;      // 64MB de mémoire
     private static final int PARALLELISM = 1;     // Threads parallèles
@@ -35,7 +38,7 @@ public class PasswordEncoder {
         try {
             return argon2.verify(hashedPassword, plainPassword.toCharArray());
         } catch (Exception e) {
-            System.err.println("Erreur vérification password: " + e.getMessage());
+            LOGGER.error("Erreur vérification password: {}", e.getMessage());
             return false;
         }
     }

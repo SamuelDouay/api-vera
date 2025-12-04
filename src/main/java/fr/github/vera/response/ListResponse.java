@@ -9,12 +9,4 @@ import java.util.List;
 public record ListResponse<T>(
         @Schema(type = "array")
         List<T> data) {
-
-    public ListResponse(List<T> data) {
-        this.data = data;
-    }
-
-    public List<T> getData() {
-        return data;
-    }
 }

@@ -34,9 +34,9 @@ public class AdminResource {
             metricsData.put(name, timerData);
         });
 
-        metrics.getCounters().forEach((name, counter) -> {
-            metricsData.put(name, counter.getCount());
-        });
+        metrics.getCounters().forEach((name, counter) ->
+                metricsData.put(name, counter.getCount())
+        );
 
         return Response.ok(metricsData).build();
     }

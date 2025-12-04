@@ -4,12 +4,12 @@ import java.util.List;
 import java.util.Optional;
 
 // Interface générique pour toutes les entités
-public interface IRepository<T, ID> {
-    Optional<T> findById(ID id);
+public interface IRepository<T, I> {
+    Optional<T> findById(I id);
 
     T save(T entity);
 
-    boolean delete(ID id);
+    boolean delete(I id);
 
     List<T> findAll(int limit, int offset);
 

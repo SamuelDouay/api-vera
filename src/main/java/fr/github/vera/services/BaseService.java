@@ -6,10 +6,10 @@ import java.lang.reflect.Field;
 import java.util.List;
 import java.util.Optional;
 
-public abstract class BaseService<T, ID, R extends IRepository<T, ID>> {
+public abstract class BaseService<T, I, R extends IRepository<T, I>> {
     protected final R repository;
 
-    public BaseService(R repository) {
+    protected BaseService(R repository) {
         this.repository = repository;
     }
 
@@ -17,7 +17,7 @@ public abstract class BaseService<T, ID, R extends IRepository<T, ID>> {
         return repository.findAll(limit, offset);
     }
 
-    public Optional<T> getById(ID id) {
+    public Optional<T> getById(I id) {
         return repository.findById(id);
     }
 
@@ -26,13 +26,13 @@ public abstract class BaseService<T, ID, R extends IRepository<T, ID>> {
     }
 
 
-    public T update(ID id, T entity) {
+    public T update(I id, T entity) {
         setId(entity, id);
         return repository.save(entity);
     }
 
 
-    public boolean delete(ID id) {
+    public boolean delete(I id) {
         return repository.delete(id);
     }
 
@@ -41,7 +41,7 @@ public abstract class BaseService<T, ID, R extends IRepository<T, ID>> {
         return repository.count();
     }
 
-    private void setId(T entity, ID id) {
+    private void setId(T entity, I id) {
         try {
             Field idField = entity.getClass().getDeclaredField("id");
             idField.setAccessible(true);

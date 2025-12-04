@@ -7,13 +7,4 @@ import io.swagger.v3.oas.annotations.media.Schema;
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public record Response<T>(
         @Schema(description = "Donnée de la réponse", example = "Opération réussie") T data) {
-
-
-    public Response(T data) {
-        this.data = data;
-    }
-
-    public T getData() {
-        return data;
-    }
 }

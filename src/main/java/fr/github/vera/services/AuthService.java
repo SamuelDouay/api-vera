@@ -92,16 +92,16 @@ public class AuthService {
     }
 
     public void logout(String token) {
-        log.info("Utilisateur déconnecté - Token: {}...", token.substring(0, 20));
+        log.info("Utilisateur déconnecté - Token: {}", token);
     }
 
     public void forgotPassword(String email) {
         // Implémentation basique - envoi d'email à faire
         Optional<User> userOpt = userRepository.findByEmail(email);
         if (userOpt.isPresent()) {
-            System.out.println("Email de reset envoyé à: " + email);
+            log.info("Email de reset envoyé à: {}", email);
         } else {
-            System.out.println("Si l'email existe, un lien de reset a été envoyé");
+            log.info("Si l'email existe, un lien de reset a été envoyé");
         }
     }
 
@@ -122,6 +122,6 @@ public class AuthService {
         user.setPassword(hashedPassword);
         userRepository.save(user);
 
-        System.out.println("Mot de passe mis à jour pour: " + request.getEmail());
+        log.info("Mot de passe mis à jour pour: {}", request.getEmail());
     }
 }

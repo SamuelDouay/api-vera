@@ -41,13 +41,13 @@ public class TokenBlacklistService {
     public void shutdown() {
         try {
             if (!scheduler.isShutdown()) {
-                System.out.println("Stopping token purge service...");
+                logger.info("Stopping token purge service...");
                 scheduler.shutdown();
 
                 if (!scheduler.awaitTermination(10, TimeUnit.SECONDS)) {
                     scheduler.shutdownNow();
                 }
-                System.out.println("Token purge service stopped");
+                logger.info("Token purge service stopped");
             }
         } catch (InterruptedException e) {
             scheduler.shutdownNow();

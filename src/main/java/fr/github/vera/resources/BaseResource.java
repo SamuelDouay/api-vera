@@ -21,11 +21,11 @@ import java.lang.reflect.Field;
 import java.net.URI;
 import java.util.List;
 
-public abstract class BaseResource<T, ID, R extends IRepository<T, ID>> {
+public abstract class BaseResource<T, I, R extends IRepository<T, I>> {
 
     protected abstract String getResourcePath();
 
-    protected abstract BaseService<T, ID, R> getService();
+    protected abstract BaseService<T, I, R> getService();
 
     protected abstract String getResourceName();
 
@@ -33,13 +33,13 @@ public abstract class BaseResource<T, ID, R extends IRepository<T, ID>> {
     protected void preCreate(T entity, SecurityContext securityContext) {
     }
 
-    protected void preUpdate(ID id, T entity, SecurityContext securityContext) {
+    protected void preUpdate(I id, T entity, SecurityContext securityContext) {
     }
 
-    protected void preDelete(ID id, SecurityContext securityContext) {
+    protected void preDelete(I id, SecurityContext securityContext) {
     }
 
-    protected void validateAccess(ID id, SecurityContext securityContext) {
+    protected void validateAccess(I id, SecurityContext securityContext) {
     }
 
     protected String extractTokenFromHeader(String authorizationHeader) {
@@ -72,7 +72,7 @@ public abstract class BaseResource<T, ID, R extends IRepository<T, ID>> {
             @ApiResponse(responseCode = "404", description = "Resource not found", content = @Content(schema = @Schema(implementation = Response.class)))
     })
     public jakarta.ws.rs.core.Response getById(
-            @PathParam("id") ID id,
+            @PathParam("id") I id,
             @Context SecurityContext securityContext) {
 
         validateAccess(id, securityContext);
@@ -92,7 +92,7 @@ public abstract class BaseResource<T, ID, R extends IRepository<T, ID>> {
             @ApiResponse(responseCode = "404", description = "Resource not found", content = @Content(schema = @Schema(implementation = Response.class)))
     })
     public jakarta.ws.rs.core.Response update(
-            @PathParam("id") ID id,
+            @PathParam("id") I id,
             @Valid T entity,
             @Context SecurityContext securityContext) {
 
@@ -117,7 +117,7 @@ public abstract class BaseResource<T, ID, R extends IRepository<T, ID>> {
             @ApiResponse(responseCode = "404", description = "Resource not found", content = @Content(schema = @Schema(implementation = Response.class)))
     })
     public jakarta.ws.rs.core.Response delete(
-            @PathParam("id") ID id,
+            @PathParam("id") I id,
             @Context SecurityContext securityContext) {
 
         preDelete(id, securityContext);
@@ -165,14 +165,14 @@ public abstract class BaseResource<T, ID, R extends IRepository<T, ID>> {
                 .build();
     }
 
-    protected ID getId(T entity) {
+    protected I getId(T entity) {
         try {
             // Recherche le champ "id" dans la classe et ses superclasses
             Field idField = findIdField(entity.getClass());
             idField.setAccessible(true);
 
             @SuppressWarnings("unchecked")
-            ID id = (ID) idField.get(entity);
+            I id = (I) idField.get(entity);
             return id;
 
         } catch (Exception e) {

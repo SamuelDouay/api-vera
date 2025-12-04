@@ -32,7 +32,6 @@ public class ConfigProperties {
             String defaultValue = parts.length > 1 ? parts[1] : "";
 
             // Priorité : variable d'environnement > valeur par défaut
-            logger.info(System.getenv(varName));
             String envValue = System.getenv(varName);
             return envValue != null ? envValue : defaultValue;
         }

@@ -15,6 +15,7 @@ public class Main {
     private static final Logger logger = LogManager.getLogger(Main.class);
     private static final String BASE_URI = "http://0.0.0.0:8080/";
     private static TokenBlacklistService tokenBlacklistService;
+    private static volatile boolean isRunning = true;
 
     public static void main(String[] args) {
         HttpServer server = null;
@@ -45,6 +46,10 @@ public class Main {
             final HttpServer finalServer = server;
             Runtime.getRuntime().addShutdownHook(new Thread(() -> {
                 shutdownApplication(finalServer, databaseManager);
+                isRunning = false;
+                synchronized (sync) {
+                    sync.notifyAll();
+                }
             }));
 
             // Démarrer le serveur
@@ -57,25 +62,24 @@ public class Main {
             logger.info("✓ Health check: {}api/admin/health", BASE_URI);
             logger.info("=".repeat(60));
 
-            Runtime.getRuntime().addShutdownHook(new Thread(() -> {
-                logger.info("Signal d'arrêt reçu...");
-                synchronized (sync) {
-                    sync.notifyAll();
-                }
-            }));
-
+            // Wait until shutdown signal
             synchronized (sync) {
-                sync.wait();
+                while (isRunning) {
+                    try {
+                        sync.wait();
+                    } catch (InterruptedException e) {
+                        Thread.currentThread().interrupt();
+                        logger.warn("Thread principal interrompu");
+                        break;
+                    }
+                }
             }
 
         } catch (Exception e) {
             logger.error("Erreur fatale lors du démarrage", e);
             System.exit(1);
         } finally {
-            if (server != null) {
-                server.shutdown();
-            }
-            databaseManager.shutdown();
+            shutdownApplication(server, databaseManager);
         }
     }
 
@@ -94,6 +98,10 @@ public class Main {
     }
 
     private static void shutdownApplication(HttpServer server, DatabaseManager databaseManager) {
+        if (!isRunning) {
+            return; // Already shutting down
+        }
+
         logger.info("Arrêt de l'application...");
 
         try {

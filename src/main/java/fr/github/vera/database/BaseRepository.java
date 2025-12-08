@@ -5,11 +5,54 @@ import fr.github.vera.repository.IRepository;
 import java.lang.reflect.Field;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 
 public abstract class BaseRepository<T, I> extends BaseRequest implements IRepository<T, I> {
+    private static final Map<Class<?>, TypeHandler> TYPE_HANDLERS = new HashMap<>();
+
+    static {
+        // Integer types
+        TYPE_HANDLERS.put(Integer.class, ResultSet::getInt);
+        TYPE_HANDLERS.put(int.class, ResultSet::getInt);
+
+        // String type
+        TYPE_HANDLERS.put(String.class, ResultSet::getString);
+
+        // Boolean types
+        TYPE_HANDLERS.put(Boolean.class, ResultSet::getBoolean);
+        TYPE_HANDLERS.put(boolean.class, ResultSet::getBoolean);
+
+        // Long types
+        TYPE_HANDLERS.put(Long.class, ResultSet::getLong);
+        TYPE_HANDLERS.put(long.class, ResultSet::getLong);
+
+        // Double types
+        TYPE_HANDLERS.put(Double.class, ResultSet::getDouble);
+        TYPE_HANDLERS.put(double.class, ResultSet::getDouble);
+
+        // Float types
+        TYPE_HANDLERS.put(Float.class, ResultSet::getFloat);
+        TYPE_HANDLERS.put(float.class, ResultSet::getFloat);
+
+        // Date/time types
+        TYPE_HANDLERS.put(java.util.Date.class, ResultSet::getTimestamp);
+
+        TYPE_HANDLERS.put(java.time.LocalDateTime.class, (rs, col) -> {
+            java.sql.Timestamp timestamp = rs.getTimestamp(col);
+            return timestamp != null ? timestamp.toLocalDateTime() : null;
+        });
+
+        TYPE_HANDLERS.put(java.time.LocalDate.class, (rs, col) -> {
+            java.sql.Date date = rs.getDate(col);
+            return date != null ? date.toLocalDate() : null;
+        });
+
+        TYPE_HANDLERS.put(java.time.Instant.class, (rs, col) -> {
+            java.sql.Timestamp timestamp = rs.getTimestamp(col);
+            return timestamp != null ? timestamp.toInstant() : null;
+        });
+    }
+
     protected final String tableName;
     protected final Class<T> entityClass;
 
@@ -190,32 +233,26 @@ public abstract class BaseRepository<T, I> extends BaseRequest implements IRepos
     }
 
     private Object getValueFromResultSet(ResultSet rs, String columnName, Class<?> type) throws SQLException {
-        if (type == Integer.class || type == int.class) {
-            return rs.getInt(columnName);
-        } else if (type == String.class) {
-            return rs.getString(columnName);
-        } else if (type == Boolean.class || type == boolean.class) {
-            return rs.getBoolean(columnName);
-        } else if (type == Long.class || type == long.class) {
-            return rs.getLong(columnName);
-        } else if (type == Double.class || type == double.class) {
-            return rs.getDouble(columnName);
-        } else if (type == Float.class || type == float.class) {
-            return rs.getFloat(columnName);
-        } else if (type == java.util.Date.class) {
-            return rs.getTimestamp(columnName);
-        } else if (type == java.time.LocalDateTime.class) {
-            java.sql.Timestamp timestamp = rs.getTimestamp(columnName);
-            return timestamp != null ? timestamp.toLocalDateTime() : null;
-        } else if (type == java.time.LocalDate.class) {
-            java.sql.Date date = rs.getDate(columnName);
-            return date != null ? date.toLocalDate() : null;
-        } else if (type == java.time.Instant.class) {
-            java.sql.Timestamp timestamp = rs.getTimestamp(columnName);
-            return timestamp != null ? timestamp.toInstant() : null;
-        } else {
-            return rs.getObject(columnName);
+        TypeHandler handler = TYPE_HANDLERS.get(type);
+
+        if (handler != null) {
+            return handler.handle(rs, columnName);
         }
+        
+        if (type.isPrimitive()) {
+            return handlePrimitiveType(rs, columnName);
+        }
+
+        return rs.getObject(columnName);
+    }
+
+    private Object handlePrimitiveType(ResultSet rs, String columnName) throws SQLException {
+        return rs.getObject(columnName);
+    }
+
+    @FunctionalInterface
+    private interface TypeHandler {
+        Object handle(ResultSet rs, String columnName) throws SQLException;
     }
 
 }

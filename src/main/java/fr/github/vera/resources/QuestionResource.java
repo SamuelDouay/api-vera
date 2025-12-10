@@ -10,7 +10,6 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
-import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.MediaType;
@@ -102,18 +101,16 @@ public class QuestionResource extends BaseResource<Question, Integer, IQuestionR
     @PATCH
     @Path("/{id}/order")
     @Operation(summary = "Mettre à jour l'ordre d'affichage d'une question")
-    @ApiResponses({
-            @ApiResponse(
-                    responseCode = "200",
-                    description = "Question order updated successfully",
-                    content = @Content(schema = @Schema(implementation = Response.class))
-            ),
-            @ApiResponse(
-                    responseCode = "404",
-                    description = "Question not found",
-                    content = @Content(schema = @Schema(implementation = Response.class))
-            )
-    })
+    @ApiResponse(
+            responseCode = "200",
+            description = "Question order updated successfully",
+            content = @Content(schema = @Schema(implementation = Response.class))
+    )
+    @ApiResponse(
+            responseCode = "404",
+            description = "Question not found",
+            content = @Content(schema = @Schema(implementation = Response.class))
+    )
     public jakarta.ws.rs.core.Response updateDisplayOrder(
             @PathParam("id") Integer questionId,
             @FormParam("order") Integer displayOrder) {
@@ -126,18 +123,16 @@ public class QuestionResource extends BaseResource<Question, Integer, IQuestionR
     @POST
     @Path("/survey/{surveyId}/reorder")
     @Operation(summary = "Réorganiser l'ordre des questions")
-    @ApiResponses({
-            @ApiResponse(
-                    responseCode = "200",
-                    description = "Questions reordered successfully",
-                    content = @Content(schema = @Schema(implementation = Response.class))
-            ),
-            @ApiResponse(
-                    responseCode = "400",
-                    description = "Invalid order list",
-                    content = @Content(schema = @Schema(implementation = Response.class))
-            )
-    })
+    @ApiResponse(
+            responseCode = "200",
+            description = "Questions reordered successfully",
+            content = @Content(schema = @Schema(implementation = Response.class))
+    )
+    @ApiResponse(
+            responseCode = "400",
+            description = "Invalid order list",
+            content = @Content(schema = @Schema(implementation = Response.class))
+    )
     public jakarta.ws.rs.core.Response reorderQuestions(
             @PathParam("surveyId") Integer surveyId,
             List<Integer> questionIdsInOrder) {
@@ -154,18 +149,16 @@ public class QuestionResource extends BaseResource<Question, Integer, IQuestionR
     @PATCH
     @Path("/{id}/mandatory")
     @Operation(summary = "Basculer le statut obligatoire d'une question")
-    @ApiResponses({
-            @ApiResponse(
-                    responseCode = "200",
-                    description = "Mandatory status toggled successfully",
-                    content = @Content(schema = @Schema(implementation = Response.class))
-            ),
-            @ApiResponse(
-                    responseCode = "404",
-                    description = "Question not found",
-                    content = @Content(schema = @Schema(implementation = Response.class))
-            )
-    })
+    @ApiResponse(
+            responseCode = "200",
+            description = "Mandatory status toggled successfully",
+            content = @Content(schema = @Schema(implementation = Response.class))
+    )
+    @ApiResponse(
+            responseCode = "404",
+            description = "Question not found",
+            content = @Content(schema = @Schema(implementation = Response.class))
+    )
     public jakarta.ws.rs.core.Response toggleMandatory(@PathParam("id") Integer questionId) {
         boolean success = questionService.toggleMandatory(questionId);
         Response<Boolean> response = new Response<>(success);
@@ -175,18 +168,16 @@ public class QuestionResource extends BaseResource<Question, Integer, IQuestionR
     @PATCH
     @Path("/{id}/correct-answer")
     @Operation(summary = "Mettre à jour la réponse correcte d'une question")
-    @ApiResponses({
-            @ApiResponse(
-                    responseCode = "200",
-                    description = "Correct answer updated successfully",
-                    content = @Content(schema = @Schema(implementation = Response.class))
-            ),
-            @ApiResponse(
-                    responseCode = "404",
-                    description = "Question not found",
-                    content = @Content(schema = @Schema(implementation = Response.class))
-            )
-    })
+    @ApiResponse(
+            responseCode = "200",
+            description = "Correct answer updated successfully",
+            content = @Content(schema = @Schema(implementation = Response.class))
+    )
+    @ApiResponse(
+            responseCode = "404",
+            description = "Question not found",
+            content = @Content(schema = @Schema(implementation = Response.class))
+    )
     public jakarta.ws.rs.core.Response updateCorrectAnswer(
             @PathParam("id") Integer questionId,
             @FormParam("correctAnswer") String correctAnswerJson) {

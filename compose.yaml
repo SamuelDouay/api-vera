@@ -6,7 +6,7 @@ networks:
 
 services:
   api-verea:
-    image: api-verea:latest
+    image: ghcr.io/samueldouay/api-vera:main
     ports:
       - '8080:8080'
     depends_on:

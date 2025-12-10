@@ -10,7 +10,6 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
-import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.MediaType;
@@ -188,18 +187,16 @@ public class HistoryResource extends BaseResource<History, Integer, IHistoryRepo
     @DELETE
     @Path("/survey/{surveyId}")
     @Operation(summary = "Supprimer l'historique d'un survey")
-    @ApiResponses({
-            @ApiResponse(
-                    responseCode = "200",
-                    description = "Survey history deleted successfully",
-                    content = @Content(schema = @Schema(implementation = Response.class))
-            ),
-            @ApiResponse(
-                    responseCode = "404",
-                    description = "Survey not found",
-                    content = @Content(schema = @Schema(implementation = Response.class))
-            )
-    })
+    @ApiResponse(
+            responseCode = "200",
+            description = "Survey history deleted successfully",
+            content = @Content(schema = @Schema(implementation = Response.class))
+    )
+    @ApiResponse(
+            responseCode = "404",
+            description = "Survey not found",
+            content = @Content(schema = @Schema(implementation = Response.class))
+    )
     public jakarta.ws.rs.core.Response deleteHistoryBySurvey(@PathParam("surveyId") Integer surveyId) {
         boolean success = historyService.deleteHistoryBySurvey(surveyId);
         Response<Boolean> response = new Response<>(success);
@@ -209,18 +206,16 @@ public class HistoryResource extends BaseResource<History, Integer, IHistoryRepo
     @POST
     @Path("/record")
     @Operation(summary = "Enregistrer une action manuellement")
-    @ApiResponses({
-            @ApiResponse(
-                    responseCode = "201",
-                    description = "Action recorded successfully",
-                    content = @Content(schema = @Schema(implementation = Response.class))
-            ),
-            @ApiResponse(
-                    responseCode = "400",
-                    description = "Invalid data",
-                    content = @Content(schema = @Schema(implementation = Response.class))
-            )
-    })
+    @ApiResponse(
+            responseCode = "201",
+            description = "Action recorded successfully",
+            content = @Content(schema = @Schema(implementation = Response.class))
+    )
+    @ApiResponse(
+            responseCode = "400",
+            description = "Invalid data",
+            content = @Content(schema = @Schema(implementation = Response.class))
+    )
     public jakarta.ws.rs.core.Response recordAction(
             @FormParam("surveyId") Integer surveyId,
             @FormParam("action") String action,

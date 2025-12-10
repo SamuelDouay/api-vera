@@ -10,7 +10,6 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
-import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.MediaType;
@@ -152,18 +151,16 @@ public class AnswerResource extends BaseResource<Answer, Integer, IAnswerReposit
     @PATCH
     @Path("/{id}/correct")
     @Operation(summary = "Marquer une réponse comme correcte/incorrecte")
-    @ApiResponses({
-            @ApiResponse(
-                    responseCode = "200",
-                    description = "Answer marked successfully",
-                    content = @Content(schema = @Schema(implementation = Response.class))
-            ),
-            @ApiResponse(
-                    responseCode = "404",
-                    description = "Answer not found",
-                    content = @Content(schema = @Schema(implementation = Response.class))
-            )
-    })
+    @ApiResponse(
+            responseCode = "200",
+            description = "Answer marked successfully",
+            content = @Content(schema = @Schema(implementation = Response.class))
+    )
+    @ApiResponse(
+            responseCode = "404",
+            description = "Answer not found",
+            content = @Content(schema = @Schema(implementation = Response.class))
+    )
     public jakarta.ws.rs.core.Response markAsCorrect(
             @PathParam("id") Integer answerId,
             @FormParam("isCorrect") boolean isCorrect) {
@@ -176,18 +173,16 @@ public class AnswerResource extends BaseResource<Answer, Integer, IAnswerReposit
     @PATCH
     @Path("/{id}/anonymize")
     @Operation(summary = "Anonymiser une réponse")
-    @ApiResponses({
-            @ApiResponse(
-                    responseCode = "200",
-                    description = "Answer anonymized successfully",
-                    content = @Content(schema = @Schema(implementation = Response.class))
-            ),
-            @ApiResponse(
-                    responseCode = "404",
-                    description = "Answer not found",
-                    content = @Content(schema = @Schema(implementation = Response.class))
-            )
-    })
+    @ApiResponse(
+            responseCode = "200",
+            description = "Answer anonymized successfully",
+            content = @Content(schema = @Schema(implementation = Response.class))
+    )
+    @ApiResponse(
+            responseCode = "404",
+            description = "Answer not found",
+            content = @Content(schema = @Schema(implementation = Response.class))
+    )
     public jakarta.ws.rs.core.Response anonymizeAnswer(@PathParam("id") Integer answerId) {
         boolean success = answerService.anonymizeAnswer(answerId);
         Response<Boolean> response = new Response<>(success);

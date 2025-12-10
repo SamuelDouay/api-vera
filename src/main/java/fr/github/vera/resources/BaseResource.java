@@ -10,7 +10,6 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
-import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import jakarta.validation.Valid;
 import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.Context;
@@ -67,10 +66,8 @@ public abstract class BaseResource<T, I, R extends IRepository<T, I>> {
     @Path("/{id}")
     @Secured()
     @Operation(summary = "Récupérer une ressource par ID", description = "Retourne une ressource spécifique par son ID")
-    @ApiResponses({
-            @ApiResponse(responseCode = "200", description = "Resource retrieved successfully"),
-            @ApiResponse(responseCode = "404", description = "Resource not found", content = @Content(schema = @Schema(implementation = Response.class)))
-    })
+    @ApiResponse(responseCode = "200", description = "Resource retrieved successfully")
+    @ApiResponse(responseCode = "404", description = "Resource not found", content = @Content(schema = @Schema(implementation = Response.class)))
     public jakarta.ws.rs.core.Response getById(
             @PathParam("id") I id,
             @Context SecurityContext securityContext) {
@@ -87,10 +84,8 @@ public abstract class BaseResource<T, I, R extends IRepository<T, I>> {
     @Path("/{id}")
     @Secured()
     @Operation(summary = "Mettre à jour une ressource", description = "Met à jour une ressource existante")
-    @ApiResponses({
-            @ApiResponse(responseCode = "200", description = "Resource updated successfully"),
-            @ApiResponse(responseCode = "404", description = "Resource not found", content = @Content(schema = @Schema(implementation = Response.class)))
-    })
+    @ApiResponse(responseCode = "200", description = "Resource updated successfully")
+    @ApiResponse(responseCode = "404", description = "Resource not found", content = @Content(schema = @Schema(implementation = Response.class)))
     public jakarta.ws.rs.core.Response update(
             @PathParam("id") I id,
             @Valid T entity,
@@ -112,10 +107,8 @@ public abstract class BaseResource<T, I, R extends IRepository<T, I>> {
     @Path("/{id}")
     @Secured(adminOnly = true)
     @Operation(summary = "Supprimer une ressource", description = "Supprime une ressource par son ID")
-    @ApiResponses({
-            @ApiResponse(responseCode = "204", description = "Resource deleted successfully"),
-            @ApiResponse(responseCode = "404", description = "Resource not found", content = @Content(schema = @Schema(implementation = Response.class)))
-    })
+    @ApiResponse(responseCode = "204", description = "Resource deleted successfully")
+    @ApiResponse(responseCode = "404", description = "Resource not found", content = @Content(schema = @Schema(implementation = Response.class)))
     public jakarta.ws.rs.core.Response delete(
             @PathParam("id") I id,
             @Context SecurityContext securityContext) {
@@ -134,9 +127,7 @@ public abstract class BaseResource<T, I, R extends IRepository<T, I>> {
     @Path("/count")
     @Secured(adminOnly = true)
     @Operation(summary = "Récupérer le nombre total de ressources", description = "Retourne le nombre total de ressources")
-    @ApiResponses({
-            @ApiResponse(responseCode = "200", description = "return resource count", content = @Content(schema = @Schema(implementation = Response.class)))
-    })
+    @ApiResponse(responseCode = "200", description = "return resource count", content = @Content(schema = @Schema(implementation = Response.class)))
     public jakarta.ws.rs.core.Response count() {
         Response<Integer> response = new Response<>(getService().count());
         return jakarta.ws.rs.core.Response.ok(response).build();
@@ -145,10 +136,8 @@ public abstract class BaseResource<T, I, R extends IRepository<T, I>> {
     @POST
     @Secured(adminOnly = true)
     @Operation(summary = "Créer une nouvelle ressource", description = "Crée une nouvelle ressource avec les données fournies")
-    @ApiResponses({
-            @ApiResponse(responseCode = "201", description = "Resource created successfully"),
-            @ApiResponse(responseCode = "400", description = "Invalid resource data", content = @Content(schema = @Schema(implementation = Response.class)))
-    })
+    @ApiResponse(responseCode = "201", description = "Resource created successfully")
+    @ApiResponse(responseCode = "400", description = "Invalid resource data", content = @Content(schema = @Schema(implementation = Response.class)))
     public jakarta.ws.rs.core.Response create(
             @Valid T entity,
             @Context SecurityContext securityContext,

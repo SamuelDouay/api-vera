@@ -11,7 +11,6 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
-import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.Context;
@@ -52,18 +51,16 @@ public class SurveyResource extends BaseResource<Survey, Integer, ISurveyReposit
             summary = "Récupérer les surveys d'un utilisateur",
             description = "Retourne tous les surveys créés par un utilisateur spécifique"
     )
-    @ApiResponses({
-            @ApiResponse(
-                    responseCode = "200",
-                    description = "Surveys retrieved successfully",
-                    content = @Content(schema = @Schema(implementation = ListResponse.class))
-            ),
-            @ApiResponse(
-                    responseCode = "403",
-                    description = "Access denied",
-                    content = @Content(schema = @Schema(implementation = Response.class))
-            )
-    })
+    @ApiResponse(
+            responseCode = "200",
+            description = "Surveys retrieved successfully",
+            content = @Content(schema = @Schema(implementation = ListResponse.class))
+    )
+    @ApiResponse(
+            responseCode = "403",
+            description = "Access denied",
+            content = @Content(schema = @Schema(implementation = Response.class))
+    )
     public jakarta.ws.rs.core.Response getSurveysByUser(
             @PathParam("userId") Integer userId,
             @QueryParam("limit") @DefaultValue("100") int limit,
@@ -86,18 +83,16 @@ public class SurveyResource extends BaseResource<Survey, Integer, ISurveyReposit
             summary = "Récupérer les surveys d'un utilisateur par statut",
             description = "Retourne les surveys d'un utilisateur filtrés par statut actif/inactif"
     )
-    @ApiResponses({
-            @ApiResponse(
-                    responseCode = "200",
-                    description = "Surveys retrieved successfully",
-                    content = @Content(schema = @Schema(implementation = ListResponse.class))
-            ),
-            @ApiResponse(
-                    responseCode = "403",
-                    description = "Access denied",
-                    content = @Content(schema = @Schema(implementation = Response.class))
-            )
-    })
+    @ApiResponse(
+            responseCode = "200",
+            description = "Surveys retrieved successfully",
+            content = @Content(schema = @Schema(implementation = ListResponse.class))
+    )
+    @ApiResponse(
+            responseCode = "403",
+            description = "Access denied",
+            content = @Content(schema = @Schema(implementation = Response.class))
+    )
     public jakarta.ws.rs.core.Response getSurveysByUserAndStatus(
             @PathParam("userId") Integer userId,
             @PathParam("status") boolean isActive,
@@ -182,18 +177,16 @@ public class SurveyResource extends BaseResource<Survey, Integer, ISurveyReposit
             summary = "Compter les surveys d'un utilisateur",
             description = "Retourne le nombre total de surveys créés par un utilisateur"
     )
-    @ApiResponses({
-            @ApiResponse(
-                    responseCode = "200",
-                    description = "Count retrieved successfully",
-                    content = @Content(schema = @Schema(implementation = Response.class))
-            ),
-            @ApiResponse(
-                    responseCode = "403",
-                    description = "Access denied",
-                    content = @Content(schema = @Schema(implementation = Response.class))
-            )
-    })
+    @ApiResponse(
+            responseCode = "200",
+            description = "Count retrieved successfully",
+            content = @Content(schema = @Schema(implementation = Response.class))
+    )
+    @ApiResponse(
+            responseCode = "403",
+            description = "Access denied",
+            content = @Content(schema = @Schema(implementation = Response.class))
+    )
     public jakarta.ws.rs.core.Response countSurveysByUser(
             @PathParam("userId") Integer userId,
             @Context SecurityContext securityContext) {
@@ -230,18 +223,16 @@ public class SurveyResource extends BaseResource<Survey, Integer, ISurveyReposit
             summary = "Activer/désactiver un survey",
             description = "Active ou désactive un survey (toggle is_active)"
     )
-    @ApiResponses({
-            @ApiResponse(
-                    responseCode = "200",
-                    description = "Survey activation status updated",
-                    content = @Content(schema = @Schema(implementation = Response.class))
-            ),
-            @ApiResponse(
-                    responseCode = "404",
-                    description = "Survey not found",
-                    content = @Content(schema = @Schema(implementation = Response.class))
-            )
-    })
+    @ApiResponse(
+            responseCode = "200",
+            description = "Survey activation status updated",
+            content = @Content(schema = @Schema(implementation = Response.class))
+    )
+    @ApiResponse(
+            responseCode = "404",
+            description = "Survey not found",
+            content = @Content(schema = @Schema(implementation = Response.class))
+    )
     public jakarta.ws.rs.core.Response toggleActivation(
             @PathParam("id") Integer id,
             @Context SecurityContext securityContext) {
@@ -260,18 +251,16 @@ public class SurveyResource extends BaseResource<Survey, Integer, ISurveyReposit
             summary = "Modifier la visibilité d'un survey",
             description = "Rend un survey public ou privé (toggle is_public)"
     )
-    @ApiResponses({
-            @ApiResponse(
-                    responseCode = "200",
-                    description = "Survey visibility updated",
-                    content = @Content(schema = @Schema(implementation = Response.class))
-            ),
-            @ApiResponse(
-                    responseCode = "404",
-                    description = "Survey not found",
-                    content = @Content(schema = @Schema(implementation = Response.class))
-            )
-    })
+    @ApiResponse(
+            responseCode = "200",
+            description = "Survey visibility updated",
+            content = @Content(schema = @Schema(implementation = Response.class))
+    )
+    @ApiResponse(
+            responseCode = "404",
+            description = "Survey not found",
+            content = @Content(schema = @Schema(implementation = Response.class))
+    )
     public jakarta.ws.rs.core.Response toggleVisibility(
             @PathParam("id") Integer id,
             @Context SecurityContext securityContext) {
@@ -290,18 +279,16 @@ public class SurveyResource extends BaseResource<Survey, Integer, ISurveyReposit
             summary = "Modifier la description d'un survey",
             description = "Met à jour la description d'un survey existant"
     )
-    @ApiResponses({
-            @ApiResponse(
-                    responseCode = "200",
-                    description = "Survey description updated",
-                    content = @Content(schema = @Schema(implementation = Response.class))
-            ),
-            @ApiResponse(
-                    responseCode = "404",
-                    description = "Survey not found",
-                    content = @Content(schema = @Schema(implementation = Response.class))
-            )
-    })
+    @ApiResponse(
+            responseCode = "200",
+            description = "Survey description updated",
+            content = @Content(schema = @Schema(implementation = Response.class))
+    )
+    @ApiResponse(
+            responseCode = "404",
+            description = "Survey not found",
+            content = @Content(schema = @Schema(implementation = Response.class))
+    )
     public jakarta.ws.rs.core.Response updateDescription(
             @PathParam("id") Integer id,
             @FormParam("description") String description,
@@ -328,18 +315,16 @@ public class SurveyResource extends BaseResource<Survey, Integer, ISurveyReposit
             summary = "Modifier le nom d'un survey",
             description = "Met à jour le nom d'un survey existant"
     )
-    @ApiResponses({
-            @ApiResponse(
-                    responseCode = "200",
-                    description = "Survey name updated",
-                    content = @Content(schema = @Schema(implementation = Response.class))
-            ),
-            @ApiResponse(
-                    responseCode = "404",
-                    description = "Survey not found",
-                    content = @Content(schema = @Schema(implementation = Response.class))
-            )
-    })
+    @ApiResponse(
+            responseCode = "200",
+            description = "Survey name updated",
+            content = @Content(schema = @Schema(implementation = Response.class))
+    )
+    @ApiResponse(
+            responseCode = "404",
+            description = "Survey not found",
+            content = @Content(schema = @Schema(implementation = Response.class))
+    )
     public jakarta.ws.rs.core.Response updateName(
             @PathParam("id") Integer id,
             @FormParam("name") String name,
@@ -366,18 +351,16 @@ public class SurveyResource extends BaseResource<Survey, Integer, ISurveyReposit
             summary = "Dupliquer un survey",
             description = "Crée une copie d'un survey existant"
     )
-    @ApiResponses({
-            @ApiResponse(
-                    responseCode = "201",
-                    description = "Survey duplicated successfully",
-                    content = @Content(schema = @Schema(implementation = Response.class))
-            ),
-            @ApiResponse(
-                    responseCode = "404",
-                    description = "Survey not found",
-                    content = @Content(schema = @Schema(implementation = Response.class))
-            )
-    })
+    @ApiResponse(
+            responseCode = "201",
+            description = "Survey duplicated successfully",
+            content = @Content(schema = @Schema(implementation = Response.class))
+    )
+    @ApiResponse(
+            responseCode = "404",
+            description = "Survey not found",
+            content = @Content(schema = @Schema(implementation = Response.class))
+    )
     public jakarta.ws.rs.core.Response duplicateSurvey(
             @PathParam("id") Integer id,
             @Context SecurityContext securityContext,
@@ -399,18 +382,16 @@ public class SurveyResource extends BaseResource<Survey, Integer, ISurveyReposit
             summary = "Récupérer un survey par token de partage",
             description = "Retourne un survey via son token de partage"
     )
-    @ApiResponses({
-            @ApiResponse(
-                    responseCode = "200",
-                    description = "Survey retrieved successfully",
-                    content = @Content(schema = @Schema(implementation = Response.class))
-            ),
-            @ApiResponse(
-                    responseCode = "404",
-                    description = "Survey not found",
-                    content = @Content(schema = @Schema(implementation = Response.class))
-            )
-    })
+    @ApiResponse(
+            responseCode = "200",
+            description = "Survey retrieved successfully",
+            content = @Content(schema = @Schema(implementation = Response.class))
+    )
+    @ApiResponse(
+            responseCode = "404",
+            description = "Survey not found",
+            content = @Content(schema = @Schema(implementation = Response.class))
+    )
     public jakarta.ws.rs.core.Response getSurveyByToken(@PathParam("token") String token) {
         Survey survey = surveyService.getSurveyByToken(token)
                 .orElseThrow(() -> new NotFoundException("Survey not found with token: " + token));
@@ -426,18 +407,16 @@ public class SurveyResource extends BaseResource<Survey, Integer, ISurveyReposit
             summary = "Générer un token de partage",
             description = "Génère un nouveau token de partage pour un survey"
     )
-    @ApiResponses({
-            @ApiResponse(
-                    responseCode = "200",
-                    description = "Share token generated successfully",
-                    content = @Content(schema = @Schema(implementation = Response.class))
-            ),
-            @ApiResponse(
-                    responseCode = "404",
-                    description = "Survey not found",
-                    content = @Content(schema = @Schema(implementation = Response.class))
-            )
-    })
+    @ApiResponse(
+            responseCode = "200",
+            description = "Share token generated successfully",
+            content = @Content(schema = @Schema(implementation = Response.class))
+    )
+    @ApiResponse(
+            responseCode = "404",
+            description = "Survey not found",
+            content = @Content(schema = @Schema(implementation = Response.class))
+    )
     public jakarta.ws.rs.core.Response generateShareToken(
             @PathParam("id") Integer id,
             @Context SecurityContext securityContext) {
@@ -456,18 +435,16 @@ public class SurveyResource extends BaseResource<Survey, Integer, ISurveyReposit
             summary = "Révoquer le token de partage",
             description = "Supprime le token de partage d'un survey"
     )
-    @ApiResponses({
-            @ApiResponse(
-                    responseCode = "200",
-                    description = "Share token revoked successfully",
-                    content = @Content(schema = @Schema(implementation = Response.class))
-            ),
-            @ApiResponse(
-                    responseCode = "404",
-                    description = "Survey not found",
-                    content = @Content(schema = @Schema(implementation = Response.class))
-            )
-    })
+    @ApiResponse(
+            responseCode = "200",
+            description = "Share token revoked successfully",
+            content = @Content(schema = @Schema(implementation = Response.class))
+    )
+    @ApiResponse(
+            responseCode = "404",
+            description = "Survey not found",
+            content = @Content(schema = @Schema(implementation = Response.class))
+    )
     public jakarta.ws.rs.core.Response revokeShareToken(
             @PathParam("id") Integer id,
             @Context SecurityContext securityContext) {

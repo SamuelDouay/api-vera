@@ -10,7 +10,6 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
-import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.MediaType;
@@ -154,18 +153,16 @@ public class HistoryQuestionResource extends BaseResource<HistoryQuestion, Integ
     @DELETE
     @Path("/question/{questionId}")
     @Operation(summary = "Supprimer l'historique d'une question")
-    @ApiResponses({
-            @ApiResponse(
-                    responseCode = "200",
-                    description = "Question history deleted successfully",
-                    content = @Content(schema = @Schema(implementation = Response.class))
-            ),
-            @ApiResponse(
-                    responseCode = "404",
-                    description = "Question not found",
-                    content = @Content(schema = @Schema(implementation = Response.class))
-            )
-    })
+    @ApiResponse(
+            responseCode = "200",
+            description = "Question history deleted successfully",
+            content = @Content(schema = @Schema(implementation = Response.class))
+    )
+    @ApiResponse(
+            responseCode = "404",
+            description = "Question not found",
+            content = @Content(schema = @Schema(implementation = Response.class))
+    )
     public jakarta.ws.rs.core.Response deleteHistoryByQuestion(@PathParam("questionId") Integer questionId) {
         boolean success = historyQuestionService.deleteHistoryByQuestion(questionId);
         Response<Boolean> response = new Response<>(success);

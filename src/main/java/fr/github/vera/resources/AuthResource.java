@@ -10,7 +10,6 @@ import fr.github.vera.services.AuthService;
 import io.jsonwebtoken.Claims;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
-import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.MediaType;
@@ -29,10 +28,8 @@ public class AuthResource {
     @Public
     @Path("/login")
     @Operation(summary = "Connexion utilisateur")
-    @ApiResponses({
-            @ApiResponse(responseCode = "200", description = "Connexion réussie"),
-            @ApiResponse(responseCode = "401", description = "Email ou mot de passe incorrect")
-    })
+    @ApiResponse(responseCode = "200", description = "Connexion réussie")
+    @ApiResponse(responseCode = "401", description = "Email ou mot de passe incorrect")
     public jakarta.ws.rs.core.Response login(LoginRequest request) {
         try {
             AuthResponse auth = authService.authenticate(request);
@@ -48,10 +45,8 @@ public class AuthResource {
     @Public
     @Path("/register")
     @Operation(summary = "Inscription utilisateur")
-    @ApiResponses({
-            @ApiResponse(responseCode = "201", description = "Utilisateur créé"),
-            @ApiResponse(responseCode = "400", description = "Email déjà utilisé")
-    })
+    @ApiResponse(responseCode = "201", description = "Utilisateur créé")
+    @ApiResponse(responseCode = "400", description = "Email déjà utilisé")
     public jakarta.ws.rs.core.Response register(RegisterRequest request) {
         try {
             AuthResponse auth = authService.register(request);

@@ -73,11 +73,12 @@ public class BlacklistedToken implements Identifiable<String> {
 
     @Override
     public String getId() {
-        return "";
+        return token;
     }
 
     @Override
     public void setId(String id) {
+        token = id;
 
     }
 }

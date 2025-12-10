@@ -4,7 +4,6 @@ import fr.github.vera.database.BaseRepository;
 import fr.github.vera.model.Answer;
 
 import java.util.List;
-import java.util.Optional;
 
 public class AnswerRepository extends BaseRepository<Answer, Integer> implements IAnswerRepository {
 
@@ -53,38 +52,10 @@ public class AnswerRepository extends BaseRepository<Answer, Integer> implements
     }
 
     @Override
-    public List<Answer> findNonAnonymousAnswers(Integer questionId) {
-        String sql = "SELECT * FROM answer WHERE id_question = ? AND is_anonymous = false ORDER BY submitted_at DESC";
-        return executeQueryWithParams(sql, this::mapResultSetList, List.of(),
-                "FIND NON ANONYMOUS ANSWERS", questionId);
-    }
-
-    @Override
-    public List<Answer> findAnswersByAnonymity(Integer questionId, boolean isAnonymous) {
-        String sql = "SELECT * FROM answer WHERE id_question = ? AND is_anonymous = ? ORDER BY submitted_at DESC";
-        return executeQueryWithParams(sql, this::mapResultSetList, List.of(),
-                "FIND ANSWERS BY ANONYMITY", questionId, isAnonymous);
-    }
-
-    @Override
     public List<Answer> findCorrectAnswers(Integer questionId) {
         String sql = "SELECT * FROM answer WHERE id_question = ? AND is_correct = true ORDER BY submitted_at DESC";
         return executeQueryWithParams(sql, this::mapResultSetList, List.of(),
                 "FIND CORRECT ANSWERS", questionId);
-    }
-
-    @Override
-    public List<Answer> findIncorrectAnswers(Integer questionId) {
-        String sql = "SELECT * FROM answer WHERE id_question = ? AND is_correct = false ORDER BY submitted_at DESC";
-        return executeQueryWithParams(sql, this::mapResultSetList, List.of(),
-                "FIND INCORRECT ANSWERS", questionId);
-    }
-
-    @Override
-    public List<Answer> findAnswersByCorrectness(Integer questionId, boolean isCorrect) {
-        String sql = "SELECT * FROM answer WHERE id_question = ? AND is_correct = ? ORDER BY submitted_at DESC";
-        return executeQueryWithParams(sql, this::mapResultSetList, List.of(),
-                "FIND ANSWERS BY CORRECTNESS", questionId, isCorrect);
     }
 
     @Override
@@ -149,33 +120,6 @@ public class AnswerRepository extends BaseRepository<Answer, Integer> implements
     }
 
     @Override
-    public List<Object[]> getAnswerDistribution(Integer questionId) {
-        String sql = """
-                SELECT original_answer, COUNT(*) as count 
-                FROM answer 
-                WHERE id_question = ? AND original_answer IS NOT NULL 
-                GROUP BY original_answer 
-                ORDER BY count DESC
-                """;
-        return executeQueryWithParams(sql, rs -> {
-            List<Object[]> distribution = new java.util.ArrayList<>();
-            while (rs.next()) {
-                distribution.add(new Object[]{
-                        rs.getString("original_answer"),
-                        rs.getInt("count")
-                });
-            }
-            return distribution;
-        }, List.of(), "GET ANSWER DISTRIBUTION", questionId);
-    }
-
-    @Override
-    public boolean updateAnswerContent(Integer answerId, String originalAnswer, String anonymousAnswer) {
-        String sql = "UPDATE answer SET original_answer = ?, anonymous_answer = ? WHERE id = ?";
-        return executeUpdate(sql, "UPDATE ANSWER CONTENT", originalAnswer, anonymousAnswer, answerId) != 0;
-    }
-
-    @Override
     public boolean markAnswerAsCorrect(Integer answerId, boolean isCorrect) {
         String sql = "UPDATE answer SET is_correct = ? WHERE id = ?";
         return executeUpdate(sql, "MARK ANSWER AS CORRECT", isCorrect, answerId) != 0;
@@ -185,18 +129,6 @@ public class AnswerRepository extends BaseRepository<Answer, Integer> implements
     public boolean anonymizeAnswer(Integer answerId) {
         String sql = "UPDATE answer SET is_anonymous = true, anonymous_answer = original_answer, original_answer = NULL WHERE id = ?";
         return executeUpdate(sql, "ANONYMIZE ANSWER", answerId) != 0;
-    }
-
-    @Override
-    public boolean deleteByQuestionId(Integer questionId) {
-        String sql = "DELETE FROM answer WHERE id_question = ?";
-        return executeUpdate(sql, "DELETE ANSWERS BY QUESTION", questionId) != 0;
-    }
-
-    @Override
-    public boolean deleteByRespondentId(String respondentId) {
-        String sql = "DELETE FROM answer WHERE respondent_id = ?";
-        return executeUpdate(sql, "DELETE ANSWERS BY RESPONDENT", respondentId) != 0;
     }
 
     @Override
@@ -214,17 +146,5 @@ public class AnswerRepository extends BaseRepository<Answer, Integer> implements
         int count = executeQueryWithParams(sql, rs -> rs.next() ? rs.getInt(1) : 0, 0,
                 "CHECK RESPONDENT ANSWERED QUESTION", respondentId, questionId);
         return count > 0;
-    }
-
-    @Override
-    public Optional<Answer> findLatestAnswerByQuestionAndRespondent(Integer questionId, String respondentId) {
-        String sql = """
-                SELECT * FROM answer 
-                WHERE id_question = ? AND respondent_id = ? 
-                ORDER BY submitted_at DESC 
-                LIMIT 1
-                """;
-        return executeQueryWithParams(sql, rs -> rs.next() ? Optional.of(mapResultSet(rs)) : Optional.empty(),
-                Optional.empty(), "FIND LATEST ANSWER", questionId, respondentId);
     }
 }

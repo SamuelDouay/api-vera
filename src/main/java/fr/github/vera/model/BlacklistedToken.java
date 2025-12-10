@@ -18,25 +18,12 @@ public class BlacklistedToken implements Identifiable<String> {
     @Column(name = "reason")
     private String reason;
 
-    public BlacklistedToken() {
-
-    }
-
     public BlacklistedToken(String token, Instant expiresAt, Integer userId, String reason) {
         this.token = token;
         this.expiresAt = expiresAt;
         this.userId = userId;
         this.reason = reason;
         this.createdAt = Instant.now();
-    }
-
-
-    public String getToken() {
-        return token;
-    }
-
-    public void setToken(String token) {
-        this.token = token;
     }
 
     public Instant getExpiresAt() {

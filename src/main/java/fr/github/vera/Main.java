@@ -64,15 +64,7 @@ public class Main {
 
             // Wait until shutdown signal
             synchronized (sync) {
-                while (isRunning) {
-                    try {
-                        sync.wait();
-                    } catch (InterruptedException e) {
-                        Thread.currentThread().interrupt();
-                        logger.warn("Thread principal interrompu");
-                        break;
-                    }
-                }
+                running(sync);
             }
 
         } catch (Exception e) {
@@ -80,6 +72,18 @@ public class Main {
             System.exit(1);
         } finally {
             shutdownApplication(server, databaseManager);
+        }
+    }
+
+    private static void running(Object sync) {
+        while (isRunning) {
+            try {
+                sync.wait();
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                logger.warn("Thread principal interrompu");
+                break;
+            }
         }
     }
 

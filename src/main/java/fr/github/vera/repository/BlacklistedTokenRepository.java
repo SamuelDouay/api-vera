@@ -20,7 +20,7 @@ public class BlacklistedTokenRepository extends BaseRepository<BlacklistedToken,
                 "reason = EXCLUDED.reason";
 
         executeUpdate(sql, "SAVE BLACKLISTED TOKEN",
-                token.getToken(),
+                token.getId(),
                 Timestamp.from(token.getExpiresAt()),
                 token.getIdUser(),
                 token.getReason());

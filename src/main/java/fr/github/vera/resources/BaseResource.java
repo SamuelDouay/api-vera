@@ -2,6 +2,7 @@ package fr.github.vera.resources;
 
 import fr.github.vera.exception.NotFoundException;
 import fr.github.vera.filters.Secured;
+import fr.github.vera.model.Identifiable;
 import fr.github.vera.repository.IRepository;
 import fr.github.vera.response.ListResponse;
 import fr.github.vera.response.Response;
@@ -16,11 +17,10 @@ import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.SecurityContext;
 import jakarta.ws.rs.core.UriInfo;
 
-import java.lang.reflect.Field;
 import java.net.URI;
 import java.util.List;
 
-public abstract class BaseResource<T, I, R extends IRepository<T, I>> {
+public abstract class BaseResource<T extends Identifiable<I>, I, R extends IRepository<T, I>> {
 
     protected abstract String getResourcePath();
 
@@ -155,31 +155,6 @@ public abstract class BaseResource<T, I, R extends IRepository<T, I>> {
     }
 
     protected I getId(T entity) {
-        try {
-            // Recherche le champ "id" dans la classe et ses superclasses
-            Field idField = findIdField(entity.getClass());
-            idField.setAccessible(true);
-
-            @SuppressWarnings("unchecked")
-            I id = (I) idField.get(entity);
-            return id;
-
-        } catch (Exception e) {
-            throw new RuntimeException("Could not get ID from entity", e);
-        }
-    }
-
-    // Méthode utilitaire pour trouver le champ id dans la hiérarchie de classes
-    private Field findIdField(Class<?> clazz) {
-        try {
-            return clazz.getDeclaredField("id");
-        } catch (NoSuchFieldException e) {
-            // Si pas trouvé dans la classe actuelle, cherche dans la superclasse
-            Class<?> superClass = clazz.getSuperclass();
-            if (superClass != null && superClass != Object.class) {
-                return findIdField(superClass);
-            }
-            throw new RuntimeException("No 'id' field found in class hierarchy for " + clazz.getSimpleName(), e);
-        }
+        return entity.getId();
     }
 }

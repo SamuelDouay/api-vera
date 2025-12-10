@@ -1,12 +1,12 @@
 package fr.github.vera.services;
 
+import fr.github.vera.model.Identifiable;
 import fr.github.vera.repository.IRepository;
 
-import java.lang.reflect.Field;
 import java.util.List;
 import java.util.Optional;
 
-public abstract class BaseService<T, I, R extends IRepository<T, I>> {
+public abstract class BaseService<T extends Identifiable<I>, I, R extends IRepository<T, I>> {
     protected final R repository;
 
     protected BaseService(R repository) {
@@ -25,9 +25,8 @@ public abstract class BaseService<T, I, R extends IRepository<T, I>> {
         return repository.save(entity);
     }
 
-
     public T update(I id, T entity) {
-        setId(entity, id);
+        entity.setId(id);
         return repository.save(entity);
     }
 
@@ -39,15 +38,5 @@ public abstract class BaseService<T, I, R extends IRepository<T, I>> {
 
     public int count() {
         return repository.count();
-    }
-
-    private void setId(T entity, I id) {
-        try {
-            Field idField = entity.getClass().getDeclaredField("id");
-            idField.setAccessible(true);
-            idField.set(entity, id);
-        } catch (NoSuchFieldException | IllegalAccessException e) {
-            throw new RuntimeException("Could not set ID on entity", e);
-        }
     }
 }

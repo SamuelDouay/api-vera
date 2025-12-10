@@ -1,5 +1,6 @@
 package fr.github.vera.database;
 
+import fr.github.vera.model.Identifiable;
 import fr.github.vera.repository.IRepository;
 
 import java.lang.reflect.Field;
@@ -7,7 +8,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.*;
 
-public abstract class BaseRepository<T, I> extends BaseRequest implements IRepository<T, I> {
+public abstract class BaseRepository<T extends Identifiable<I>, I> extends BaseRequest implements IRepository<T, I> {
     private static final Map<Class<?>, TypeHandler> TYPE_HANDLERS = new HashMap<>();
 
     static {
@@ -96,20 +97,13 @@ public abstract class BaseRepository<T, I> extends BaseRequest implements IRepos
 
     @Override
     public T save(T entity) {
-        try {
-            // Vérifie si l'entité a un ID
-            Field idField = entity.getClass().getDeclaredField("id");
-            idField.setAccessible(true);
-            Object idValue = idField.get(entity);
+        I idValue = entity.getId();
 
-            if (idValue == null) {
-                return create(entity);
-            } else {
-                return update(entity);
-            }
-        } catch (Exception e) {
-            throw new RuntimeException("Error saving entity", e);
+        if (idValue == null) {
+            return create(entity);
         }
+        return update(entity);
+
     }
 
     protected T update(T entity) {
@@ -127,18 +121,13 @@ public abstract class BaseRepository<T, I> extends BaseRequest implements IRepos
         for (Field field : fields) {
             Column columnAnnotation = field.getAnnotation(Column.class);
             if (columnAnnotation != null) {
+                I value = entity.getId();
                 field.setAccessible(true);
-                try {
-                    Object value = field.get(entity);
-                    String columnName = columnAnnotation.name();
-
-                    if (columnName.equals("id")) {
-                        idValue = value; // Stocke l'ID pour la clause WHERE
-                    } else if (value != null && columnAnnotation.updatable()) {
-                        builder.set(columnName, value);
-                    }
-                } catch (IllegalAccessException e) {
-                    logger.error(e.getMessage());
+                String columnName = columnAnnotation.name();
+                if (columnName.equals("id")) {
+                    idValue = value; // Stocke l'ID pour la clause WHERE
+                } else if (value != null && columnAnnotation.updatable()) {
+                    builder.set(columnName, value);
                 }
             }
         }
@@ -196,13 +185,7 @@ public abstract class BaseRepository<T, I> extends BaseRequest implements IRepos
     }
 
     private void setEntityId(T entity, Integer id) {
-        try {
-            Field idField = entity.getClass().getDeclaredField("id");
-            idField.setAccessible(true);
-            idField.set(entity, id);
-        } catch (Exception e) {
-            throw new RuntimeException("Could not set generated ID", e);
-        }
+        entity.setId((I) id);
     }
 
     protected T mapResultSet(ResultSet rs) throws SQLException {
@@ -238,7 +221,7 @@ public abstract class BaseRepository<T, I> extends BaseRequest implements IRepos
         if (handler != null) {
             return handler.handle(rs, columnName);
         }
-        
+
         if (type.isPrimitive()) {
             return handlePrimitiveType(rs, columnName);
         }

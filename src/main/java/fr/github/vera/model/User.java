@@ -8,7 +8,7 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 
 @Table(name = "users")
-public class User {
+public class User implements Identifiable<Integer> {
     @Column(name = "id", updatable = false)
     private Integer id;
 

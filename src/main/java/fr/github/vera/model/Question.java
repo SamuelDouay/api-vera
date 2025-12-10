@@ -5,7 +5,7 @@ import fr.github.vera.database.Table;
 import jakarta.validation.constraints.NotBlank;
 
 @Table(name = "question")
-public class Question {
+public class Question implements Identifiable<Integer> {
     @Column(name = "id", updatable = false)
     private Integer id;
     @Column(name = "title")

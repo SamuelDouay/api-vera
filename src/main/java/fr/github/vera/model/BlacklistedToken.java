@@ -6,7 +6,7 @@ import fr.github.vera.database.Table;
 import java.time.Instant;
 
 @Table(name = "blacklisted_tokens")
-public class BlacklistedToken {
+public class BlacklistedToken implements Identifiable<String> {
     @Column(name = "token")
     private String token;
     @Column(name = "expires_at")
@@ -69,5 +69,15 @@ public class BlacklistedToken {
 
     public void setReason(String reason) {
         this.reason = reason;
+    }
+
+    @Override
+    public String getId() {
+        return "";
+    }
+
+    @Override
+    public void setId(String id) {
+
     }
 }

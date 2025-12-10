@@ -8,7 +8,7 @@ import jakarta.validation.constraints.NotNull;
 import java.time.LocalDateTime;
 
 @Table(name = "answer")
-public class Answer {
+public class Answer implements Identifiable<Integer> {
     @Column(name = "id", updatable = false)
     private Integer id;
 

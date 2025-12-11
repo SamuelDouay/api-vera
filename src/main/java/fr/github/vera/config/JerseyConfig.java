@@ -1,5 +1,8 @@
 package fr.github.vera.config;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializationFeature;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import fr.github.vera.resources.SwaggerUIResource;
 import io.swagger.v3.jaxrs2.integration.JaxrsOpenApiContextBuilder;
 import io.swagger.v3.jaxrs2.integration.resources.OpenApiResource;
@@ -10,6 +13,8 @@ import io.swagger.v3.oas.models.OpenAPI;
 import io.swagger.v3.oas.models.info.Info;
 import io.swagger.v3.oas.models.security.SecurityScheme;
 import jakarta.ws.rs.ApplicationPath;
+import jakarta.ws.rs.ext.ContextResolver;
+import org.glassfish.jersey.jackson.JacksonFeature;
 import org.glassfish.jersey.server.ResourceConfig;
 
 import java.util.HashSet;
@@ -29,6 +34,11 @@ public class JerseyConfig extends ResourceConfig {
         // Configure Swagger
         configureSwagger();
 
+        // Enregistrer Jackson pour JSON
+        register(JacksonFeature.class);
+
+        // Configurer Jackson
+        register(new ObjectMapperContextResolver());
         // Register Swagger resources
         register(OpenApiResource.class);
         register(SwaggerUIResource.class);
@@ -72,6 +82,23 @@ public class JerseyConfig extends ResourceConfig {
                     .buildContext(true);
         } catch (OpenApiConfigurationException e) {
             throw new RuntimeException("Failed to initialize Swagger", e);
+        }
+    }
+
+    public static class ObjectMapperContextResolver implements ContextResolver<ObjectMapper> {
+        private final ObjectMapper mapper;
+
+        public ObjectMapperContextResolver() {
+            mapper = new ObjectMapper();
+            // Important pour les dates
+            mapper.registerModule(new JavaTimeModule());
+            mapper.disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
+            // Autres configurations si nécessaire
+        }
+
+        @Override
+        public ObjectMapper getContext(Class<?> type) {
+            return mapper;
         }
     }
 }

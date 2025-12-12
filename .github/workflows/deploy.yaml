@@ -4,11 +4,6 @@ on:
   push:
     branches: [ main ]
 
-env:
-  REGISTRY: ghcr.io
-  IMAGE_NAME: ${{ github.repository }}
-  SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
-
 jobs:
   build-push:
     runs-on: ubuntu-latest
@@ -46,18 +41,16 @@ jobs:
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           port: ${{ secrets.SSH_PORT }}
           script: |
+            cd ~/opt/vera
+            
             # Pull latest image
-            echo ${{ secrets.GITHUB_TOKEN }} | docker login ghcr.io -u ${{ github.actor }} --password-stdin
-            docker pull ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:main
+            sudo docker pull unetrehumain/api-vera:latest
             
             # Stop and remove old container
-            docker-compose down || true
-            
-            # Update docker-compose.yml with new image
-            export IMAGE_TAG=${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:main
+            sudo docker compose down
             
             # Start new container
-            docker-compose up -d
+            sudo docker compose up -d
             
             # Cleanup old images
-            docker image prune -f
+            sudo docker image prune -f

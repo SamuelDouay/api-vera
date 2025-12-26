@@ -111,16 +111,36 @@ public class CorsFilter implements ContainerRequestFilter, ContainerResponseFilt
         boolean isPublic = isPublicEndpoint(requestContext);
         logger.debug("Endpoint public: {} | Origin: {}", isPublic, origin);
 
+        // Si pas d'Origin, gérer selon le type d'endpoint
+        if (origin == null) {
+            if (isPublic) {
+                // Endpoint public sans Origin : autorisé (Postman, Swagger, etc.)
+                logger.debug("Endpoint public sans Origin → Autorisé");
+            } else {
+                // Endpoint protégé sans Origin : BLOQUÉ
+                logger.warn("⛔ Endpoint protégé sans Origin → BLOQUÉ");
+                responseContext.setStatus(Response.Status.FORBIDDEN.getStatusCode());
+                responseContext.setEntity("{\"error\": \"CORS policy: Origin header is required for protected endpoints\"}");
+                responseContext.getHeaders().putSingle("Content-Type", "application/json");
+            }
+            return;
+        }
+
+        // Si Origin présent, vérifier selon le type d'endpoint
         if (isPublic) {
             responseContext.getHeaders().add("Access-Control-Allow-Origin", "*");
-            logger.debug("CORS: * (endpoint public)");
+            logger.debug("CORS: * (endpoint public avec Origin)");
         } else {
-            if (origin != null && isOriginAllowed(origin)) {
+            if (isOriginAllowed(origin)) {
                 responseContext.getHeaders().add("Access-Control-Allow-Origin", origin);
                 responseContext.getHeaders().add("Access-Control-Allow-Credentials", "true");
-                logger.debug("CORS: {} (autorisé)", origin);
+                logger.debug("✓ CORS: {} (autorisé)", origin);
             } else {
-                logger.warn("CORS: Origin non autorisée ou absente: {}", origin);
+                logger.warn("⛔ CORS: Origin NON autorisée: {}", origin);
+                responseContext.setStatus(Response.Status.FORBIDDEN.getStatusCode());
+                responseContext.setEntity("{\"error\": \"CORS policy: Origin '" + origin + "' is not allowed\"}");
+                responseContext.getHeaders().putSingle("Content-Type", "application/json");
+                return;
             }
         }
 

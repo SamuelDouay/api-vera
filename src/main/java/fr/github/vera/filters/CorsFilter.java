@@ -13,7 +13,6 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import java.io.IOException;
-import java.lang.reflect.Method;
 
 @Provider
 @Priority(Priorities.HEADER_DECORATOR)
@@ -21,179 +20,197 @@ public class CorsFilter implements ContainerRequestFilter, ContainerResponseFilt
 
     private static final Logger logger = LogManager.getLogger(CorsFilter.class);
 
+    private static final String ALLOWED_HEADERS = "origin, content-type, accept, authorization, x-requested-with, x-csrf-token";
+    private static final String ALLOWED_METHODS = "GET, POST, PUT, DELETE, OPTIONS, HEAD, PATCH";
+    private static final String MAX_AGE = "3600";
+    private static final String EXPOSED_HEADERS = "x-csrf-token, authorization";
+    private static final String OPTIONS_METHOD = "OPTIONS";
+    private static final String ORIGIN_HEADER = "Origin";
+    private static final String ACCESS_CONTROL_ALLOW_ORIGIN = "Access-Control-Allow-Origin";
+    private static final String ACCESS_CONTROL_ALLOW_CREDENTIALS = "Access-Control-Allow-Credentials";
+    private static final String CONTENT_TYPE = "Content-Type";
+    private static final String APPLICATION_JSON = "application/json";
+
+    private static final String CONFIG_KEY_ALLOWED_DOMAIN = "cors.allowed-domain";
+    private static final String IS_PUBLIC_PROPERTY = "isPublic";
+
     public CorsFilter() {
-        logger.info("================================================");
-        logger.info("   CorsFilter INITIALISÉ !");
-        logger.info("================================================");
-    }
-
-    private boolean isPublicEndpoint(ContainerRequestContext requestContext) {
-        try {
-            // Pour Jersey, utiliser ResourceInfo
-            Object resourceInfo = requestContext.getProperty("org.glassfish.jersey.server.model.ResourceMethod");
-
-            if (resourceInfo == null) {
-                // Fallback pour RESTEasy
-                resourceInfo = requestContext.getProperty("org.jboss.resteasy.core.ResourceMethodInvoker");
-            }
-
-            if (resourceInfo != null) {
-                Method getMethod = resourceInfo.getClass().getMethod("getInvocable");
-                Object invocable = getMethod.invoke(resourceInfo);
-
-                Method getHandlingMethod = invocable.getClass().getMethod("getHandlingMethod");
-                Method resourceMethod = (Method) getHandlingMethod.invoke(invocable);
-
-                boolean isPublic = resourceMethod.isAnnotationPresent(Public.class) ||
-                        resourceMethod.getDeclaringClass().isAnnotationPresent(Public.class);
-
-                logger.debug("Méthode {} - Public: {}", resourceMethod.getName(), isPublic);
-                return isPublic;
-            }
-        } catch (Exception e) {
-            logger.error("Erreur lors de la détection de l'endpoint public: {}", e.getMessage(), e);
-        }
-        return false;
+        logInitialization();
     }
 
     @Override
     public void filter(ContainerRequestContext requestContext) throws IOException {
         String method = requestContext.getMethod();
         String path = requestContext.getUriInfo().getPath();
-        String origin = requestContext.getHeaderString("Origin");
+        String origin = requestContext.getHeaderString(ORIGIN_HEADER);
 
         logger.info("CORS REQUEST: {} {} | Origin: {}", method, path, origin);
 
-        // Gérer les requêtes preflight OPTIONS
-        if ("OPTIONS".equals(method)) {
-            logger.info("PREFLIGHT détecté pour le path: {}", path);
-
-            Response.ResponseBuilder responseBuilder = Response.ok();
-
-            // Pour les OPTIONS, autoriser si l'origine est valide
-            if (origin != null && isOriginAllowed(origin)) {
-                responseBuilder.header("Access-Control-Allow-Origin", origin);
-                responseBuilder.header("Access-Control-Allow-Credentials", "true");
-                logger.info("Origin autorisée: {}", origin);
-            } else if (origin != null) {
-                logger.warn("Origin REFUSÉE: {}", origin);
-                // On autorise quand même pour le preflight, la vraie requête sera bloquée
-                responseBuilder.header("Access-Control-Allow-Origin", origin);
-            }
-
-            responseBuilder.header("Access-Control-Allow-Headers",
-                    "origin, content-type, accept, authorization, x-requested-with, x-csrf-token");
-            responseBuilder.header("Access-Control-Allow-Methods",
-                    "GET, POST, PUT, DELETE, OPTIONS, HEAD, PATCH");
-            responseBuilder.header("Access-Control-Max-Age", "3600");
-            responseBuilder.header("Access-Control-Expose-Headers",
-                    "x-csrf-token, authorization");
-
-            requestContext.abortWith(responseBuilder.build());
-            logger.debug("Réponse PREFLIGHT envoyée");
+        if (OPTIONS_METHOD.equals(method)) {
+            handlePreflightRequest(requestContext, origin, path);
         }
     }
 
     @Override
     public void filter(ContainerRequestContext requestContext,
                        ContainerResponseContext responseContext) {
-
         logger.debug("CORS RESPONSE: Status {}", responseContext.getStatus());
 
-        String origin = requestContext.getHeaderString("Origin");
-
-        // Éviter de dupliquer les headers si déjà ajoutés par le preflight
-        if (responseContext.getHeaders().containsKey("Access-Control-Allow-Origin")) {
+        if (responseContext.getHeaders().containsKey(ACCESS_CONTROL_ALLOW_ORIGIN)) {
             logger.debug("Headers CORS déjà présents, skip");
             return;
         }
 
-        boolean isPublic = isPublicEndpoint(requestContext);
+        String origin = requestContext.getHeaderString(ORIGIN_HEADER);
+        boolean isPublic = isPublic(requestContext);
+
+        handleResponseCorsHeaders(requestContext, responseContext, origin, isPublic);
+    }
+
+    public boolean isPublic(ContainerRequestContext requestContext) {
+        Object property = requestContext.getProperty(IS_PUBLIC_PROPERTY);
+        if (property == null) {
+            return false; // Par défaut, considérer comme non public
+        }
+        return Boolean.TRUE.equals(property) || "true".equals(property.toString());
+    }
+
+    private void handlePreflightRequest(ContainerRequestContext requestContext,
+                                        String origin, String path) {
+        logger.info("PREFLIGHT détecté pour le path: {}", path);
+
+        Response.ResponseBuilder responseBuilder = Response.ok();
+        addCommonCorsHeaders(responseBuilder);
+
+        if (origin != null && isOriginAllowed(origin)) {
+            responseBuilder.header(ACCESS_CONTROL_ALLOW_ORIGIN, origin);
+            responseBuilder.header(ACCESS_CONTROL_ALLOW_CREDENTIALS, "true");
+            logger.info("Origin autorisée: {}", origin);
+        } else if (origin != null) {
+            logger.warn("Origin REFUSÉE: {}", origin);
+            // Autoriser temporairement pour preflight
+            responseBuilder.header(ACCESS_CONTROL_ALLOW_ORIGIN, origin);
+        }
+
+        requestContext.abortWith(responseBuilder.build());
+        logger.debug("Réponse PREFLIGHT envoyée");
+    }
+
+    private void handleResponseCorsHeaders(ContainerRequestContext requestContext,
+                                           ContainerResponseContext responseContext,
+                                           String origin, boolean isPublic) {
         logger.debug("Endpoint public: {} | Origin: {}", isPublic, origin);
 
-        // Si pas d'Origin, gérer selon le type d'endpoint
         if (origin == null) {
-            if (isPublic) {
-                // Endpoint public sans Origin : autorisé (Postman, Swagger, etc.)
-                logger.debug("Endpoint public sans Origin → Autorisé");
-            } else {
-                // Endpoint protégé sans Origin : BLOQUÉ
-                logger.warn("⛔ Endpoint protégé sans Origin → BLOQUÉ");
-                responseContext.setStatus(Response.Status.FORBIDDEN.getStatusCode());
-                responseContext.setEntity("{\"error\": \"CORS policy: Origin header is required for protected endpoints\"}");
-                responseContext.getHeaders().putSingle("Content-Type", "application/json");
-            }
+            handleMissingOrigin(responseContext, isPublic);
             return;
         }
 
-        // Si Origin présent, vérifier selon le type d'endpoint
         if (isPublic) {
-            responseContext.getHeaders().add("Access-Control-Allow-Origin", "*");
-            logger.debug("CORS: * (endpoint public avec Origin)");
+            addPublicEndpointHeaders(responseContext);
         } else {
-            if (isOriginAllowed(origin)) {
-                responseContext.getHeaders().add("Access-Control-Allow-Origin", origin);
-                responseContext.getHeaders().add("Access-Control-Allow-Credentials", "true");
-                logger.debug("✓ CORS: {} (autorisé)", origin);
-            } else {
-                logger.warn("⛔ CORS: Origin NON autorisée: {}", origin);
-                responseContext.setStatus(Response.Status.FORBIDDEN.getStatusCode());
-                responseContext.setEntity("{\"error\": \"CORS policy: Origin '" + origin + "' is not allowed\"}");
-                responseContext.getHeaders().putSingle("Content-Type", "application/json");
-                return;
-            }
+            handleProtectedEndpoint(responseContext, origin);
         }
 
-        // Headers communs
-        responseContext.getHeaders().add("Access-Control-Allow-Headers",
-                "origin, content-type, accept, authorization, x-requested-with, x-csrf-token");
-        responseContext.getHeaders().add("Access-Control-Allow-Methods",
-                "GET, POST, PUT, DELETE, OPTIONS, HEAD, PATCH");
-        responseContext.getHeaders().add("Access-Control-Max-Age", "3600");
-        responseContext.getHeaders().add("Access-Control-Expose-Headers",
-                "x-csrf-token, authorization");
+        if (responseContext.getStatus() != Response.Status.FORBIDDEN.getStatusCode()) {
+            addCommonCorsHeaders(responseContext);
+        }
+    }
+
+    private void handleMissingOrigin(ContainerResponseContext responseContext, boolean isPublic) {
+        if (isPublic) {
+            responseContext.getHeaders().add(ACCESS_CONTROL_ALLOW_ORIGIN, "*");
+            logger.debug("Endpoint public sans Origin → Autorisé");
+        } else {
+            logger.warn("Endpoint protégé sans Origin → BLOQUÉ");
+            setForbiddenResponse(responseContext,
+                    "{\"error\": \"CORS policy: Origin header is required for protected endpoints\"}");
+        }
+    }
+
+    private void addPublicEndpointHeaders(ContainerResponseContext responseContext) {
+        responseContext.getHeaders().add(ACCESS_CONTROL_ALLOW_ORIGIN, "*");
+        logger.debug("CORS: * (endpoint public avec Origin)");
+    }
+
+    private void handleProtectedEndpoint(ContainerResponseContext responseContext, String origin) {
+        if (isOriginAllowed(origin)) {
+            responseContext.getHeaders().add(ACCESS_CONTROL_ALLOW_ORIGIN, origin);
+            responseContext.getHeaders().add(ACCESS_CONTROL_ALLOW_CREDENTIALS, "true");
+            logger.debug("✓ CORS: {} (autorisé)", origin);
+        } else {
+            logger.warn("CORS: Origin NON autorisée: {}", origin);
+            setForbiddenResponse(responseContext,
+                    String.format("{\"error\": \"CORS policy: Origin '%s' is not allowed\"}", origin));
+        }
+    }
+
+    private void setForbiddenResponse(ContainerResponseContext responseContext, String errorMessage) {
+        responseContext.setStatus(Response.Status.FORBIDDEN.getStatusCode());
+        responseContext.setEntity(errorMessage);
+        responseContext.getHeaders().putSingle(CONTENT_TYPE, APPLICATION_JSON);
+    }
+
+    private void addCommonCorsHeaders(Response.ResponseBuilder responseBuilder) {
+        responseBuilder.header("Access-Control-Allow-Headers", ALLOWED_HEADERS);
+        responseBuilder.header("Access-Control-Allow-Methods", ALLOWED_METHODS);
+        responseBuilder.header("Access-Control-Max-Age", MAX_AGE);
+        responseBuilder.header("Access-Control-Expose-Headers", EXPOSED_HEADERS);
+    }
+
+    private void addCommonCorsHeaders(ContainerResponseContext responseContext) {
+        responseContext.getHeaders().add("Access-Control-Allow-Headers", ALLOWED_HEADERS);
+        responseContext.getHeaders().add("Access-Control-Allow-Methods", ALLOWED_METHODS);
+        responseContext.getHeaders().add("Access-Control-Max-Age", MAX_AGE);
+        responseContext.getHeaders().add("Access-Control-Expose-Headers", EXPOSED_HEADERS);
     }
 
     private boolean isOriginAllowed(String origin) {
         try {
-            String allowedDomain = ConfigProperties.getInstance().getProperty("cors.allowed-domain");
+            String allowedDomain = ConfigProperties.getInstance().getProperty(CONFIG_KEY_ALLOWED_DOMAIN);
 
-            logger.debug("Vérification origin: '{}' contre domaines autorisés: '{}'", origin, allowedDomain);
-
-            if (allowedDomain == null || allowedDomain.isEmpty()) {
-                logger.error("ATTENTION: cors.allowed-domain n'est pas configuré!");
+            if (isDomainConfigurationInvalid(allowedDomain)) {
+                logger.error("ATTENTION: {} n'est pas configuré!", CONFIG_KEY_ALLOWED_DOMAIN);
                 return false;
             }
 
-            String[] domains = allowedDomain.split(",");
-            for (String domain : domains) {
-                String trimmed = domain.trim();
-
-                logger.trace("Comparaison avec: '{}'", trimmed);
-
-                // Comparaison exacte
-                if (origin.equals(trimmed)) {
-                    logger.debug("Match exact trouvé: {}", trimmed);
-                    return true;
-                }
-
-                // Support pour localhost avec différents ports
-                if (trimmed.startsWith("http://localhost") && origin.startsWith("http://localhost")) {
-                    logger.debug("Match localhost HTTP trouvé");
-                    return true;
-                }
-
-                if (trimmed.startsWith("https://localhost") && origin.startsWith("https://localhost")) {
-                    logger.debug("Match localhost HTTPS trouvé");
-                    return true;
-                }
-            }
-
-            logger.debug("Aucun match trouvé pour l'origin: {}", origin);
+            return isOriginInAllowedDomains(origin, allowedDomain);
         } catch (Exception e) {
             logger.error("Erreur lors de la vérification de l'origine: {}", e.getMessage(), e);
+            return false;
+        }
+    }
+
+    private boolean isDomainConfigurationInvalid(String allowedDomain) {
+        return allowedDomain == null || allowedDomain.isEmpty();
+    }
+
+    private boolean isOriginInAllowedDomains(String origin, String allowedDomain) {
+        String[] domains = allowedDomain.split(",");
+
+        for (String domain : domains) {
+            String trimmedDomain = domain.trim();
+            logger.trace("Comparaison avec: '{}'", trimmedDomain);
+
+            if (origin.equals(trimmedDomain) || isLocalhostDomain(trimmedDomain)) {
+                logger.debug("Match trouvé pour l'origin: {} avec domaine: {}", origin, trimmedDomain);
+                return true;
+            }
         }
 
+        logger.debug("Aucun match trouvé pour l'origin: {}", origin);
         return false;
+    }
+
+    private boolean isLocalhostDomain(String domain) {
+        return domain.contains("localhost") ||
+                domain.contains("127.0.0.1") ||
+                domain.contains("0:0:0:");
+    }
+
+    private void logInitialization() {
+        logger.info("================================================");
+        logger.info("   CorsFilter INITIALISÉ !");
+        logger.info("================================================");
     }
 }

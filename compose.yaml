@@ -20,6 +20,7 @@ services:
       - DB_URL=jdbc:postgresql://internal-db:5432/vera
       - DB_USERNAME=postgres
       - DB_PASSWORD=postgres
+      - CORS_ALLOWED_DOMAIN=http://localhost
   internal-db:
     image: postgres:14
     user: postgres

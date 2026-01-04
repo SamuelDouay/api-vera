@@ -26,6 +26,7 @@ public class CorsFilter implements ContainerRequestFilter, ContainerResponseFilt
     private static final String EXPOSED_HEADERS = "x-csrf-token, authorization";
     private static final String OPTIONS_METHOD = "OPTIONS";
     private static final String ORIGIN_HEADER = "Origin";
+    private static final String REFERER_HEADER = "Referer";
     private static final String ACCESS_CONTROL_ALLOW_ORIGIN = "Access-Control-Allow-Origin";
     private static final String ACCESS_CONTROL_ALLOW_CREDENTIALS = "Access-Control-Allow-Credentials";
     private static final String CONTENT_TYPE = "Content-Type";
@@ -43,11 +44,12 @@ public class CorsFilter implements ContainerRequestFilter, ContainerResponseFilt
         String method = requestContext.getMethod();
         String path = requestContext.getUriInfo().getPath();
         String origin = requestContext.getHeaderString(ORIGIN_HEADER);
+        String referer = requestContext.getHeaderString(REFERER_HEADER);
 
-        logger.info("CORS REQUEST: {} {} | Origin: {}", method, path, origin);
+        logger.info("CORS REQUEST: {} {} | Origin: {} | Referer: {}", method, path, origin, referer);
 
         if (OPTIONS_METHOD.equals(method)) {
-            handlePreflightRequest(requestContext, origin, path);
+            handlePreflightRequest(requestContext, origin, referer, path);
         }
     }
 
@@ -62,34 +64,41 @@ public class CorsFilter implements ContainerRequestFilter, ContainerResponseFilt
         }
 
         String origin = requestContext.getHeaderString(ORIGIN_HEADER);
+        String referer = requestContext.getHeaderString(REFERER_HEADER);
         boolean isPublic = isPublic(requestContext);
 
-        handleResponseCorsHeaders(requestContext, responseContext, origin, isPublic);
+        handleResponseCorsHeaders(requestContext, responseContext, origin, referer, isPublic);
     }
 
     public boolean isPublic(ContainerRequestContext requestContext) {
         Object property = requestContext.getProperty(IS_PUBLIC_PROPERTY);
         if (property == null) {
-            return false; // Par défaut, considérer comme non public
+            return false;
         }
         return Boolean.TRUE.equals(property) || "true".equals(property.toString());
     }
 
     private void handlePreflightRequest(ContainerRequestContext requestContext,
-                                        String origin, String path) {
+                                        String origin, String referer, String path) {
         logger.info("PREFLIGHT détecté pour le path: {}", path);
 
         Response.ResponseBuilder responseBuilder = Response.ok();
         addCommonCorsHeaders(responseBuilder);
 
-        if (origin != null && isOriginAllowed(origin)) {
+        // Vérifier Origin ou Referer
+        if (isOriginAllowed(origin)) {
             responseBuilder.header(ACCESS_CONTROL_ALLOW_ORIGIN, origin);
             responseBuilder.header(ACCESS_CONTROL_ALLOW_CREDENTIALS, "true");
             logger.info("Origin autorisée: {}", origin);
         } else if (origin != null) {
             logger.warn("Origin REFUSÉE: {}", origin);
-            // Autoriser temporairement pour preflight
             responseBuilder.header(ACCESS_CONTROL_ALLOW_ORIGIN, origin);
+        } else if (isRefererAllowed(referer)) {
+            // Fallback sur Referer si Origin absent
+            String allowedDomain = extractDomainFromReferer(referer);
+            responseBuilder.header(ACCESS_CONTROL_ALLOW_ORIGIN, allowedDomain);
+            responseBuilder.header(ACCESS_CONTROL_ALLOW_CREDENTIALS, "true");
+            logger.info("Referer autorisé (Origin absent): {}", referer);
         }
 
         requestContext.abortWith(responseBuilder.build());
@@ -98,18 +107,18 @@ public class CorsFilter implements ContainerRequestFilter, ContainerResponseFilt
 
     private void handleResponseCorsHeaders(ContainerRequestContext requestContext,
                                            ContainerResponseContext responseContext,
-                                           String origin, boolean isPublic) {
-        logger.debug("Endpoint public: {} | Origin: {}", isPublic, origin);
+                                           String origin, String referer, boolean isPublic) {
+        logger.debug("Endpoint public: {} | Origin: {} | Referer: {}", isPublic, origin, referer);
 
-        if (origin == null) {
-            handleMissingOrigin(responseContext, isPublic);
+        if (origin == null && referer == null) {
+            handleMissingOriginAndReferer(responseContext, isPublic);
             return;
         }
 
         if (isPublic) {
             addPublicEndpointHeaders(responseContext);
         } else {
-            handleProtectedEndpoint(responseContext, origin);
+            handleProtectedEndpoint(responseContext, origin, referer);
         }
 
         if (responseContext.getStatus() != Response.Status.FORBIDDEN.getStatusCode()) {
@@ -117,31 +126,103 @@ public class CorsFilter implements ContainerRequestFilter, ContainerResponseFilt
         }
     }
 
-    private void handleMissingOrigin(ContainerResponseContext responseContext, boolean isPublic) {
+    private void handleMissingOriginAndReferer(ContainerResponseContext responseContext, boolean isPublic) {
         if (isPublic) {
             responseContext.getHeaders().add(ACCESS_CONTROL_ALLOW_ORIGIN, "*");
-            logger.debug("Endpoint public sans Origin → Autorisé");
+            logger.debug("Endpoint public sans Origin/Referer → Autorisé");
         } else {
-            logger.warn("Endpoint protégé sans Origin → BLOQUÉ");
+            logger.warn("Endpoint protégé sans Origin ni Referer → BLOQUÉ");
             setForbiddenResponse(responseContext,
-                    "{\"error\": \"CORS policy: Origin header is required for protected endpoints\"}");
+                    "{\"error\": \"CORS policy: Origin or Referer header is required for protected endpoints\"}");
         }
     }
 
     private void addPublicEndpointHeaders(ContainerResponseContext responseContext) {
         responseContext.getHeaders().add(ACCESS_CONTROL_ALLOW_ORIGIN, "*");
-        logger.debug("CORS: * (endpoint public avec Origin)");
+        logger.debug("CORS: * (endpoint public)");
     }
 
-    private void handleProtectedEndpoint(ContainerResponseContext responseContext, String origin) {
+    private void handleProtectedEndpoint(ContainerResponseContext responseContext,
+                                         String origin, String referer) {
+        // Priorité 1 : Vérifier Origin
         if (isOriginAllowed(origin)) {
             responseContext.getHeaders().add(ACCESS_CONTROL_ALLOW_ORIGIN, origin);
             responseContext.getHeaders().add(ACCESS_CONTROL_ALLOW_CREDENTIALS, "true");
-            logger.debug("✓ CORS: {} (autorisé)", origin);
-        } else {
-            logger.warn("CORS: Origin NON autorisée: {}", origin);
-            setForbiddenResponse(responseContext,
-                    String.format("{\"error\": \"CORS policy: Origin '%s' is not allowed\"}", origin));
+            logger.debug("✓ CORS: {} (Origin autorisé)", origin);
+            return;
+        }
+
+        // Priorité 2 : Fallback sur Referer
+        if (isRefererAllowed(referer)) {
+            String allowedDomain = extractDomainFromReferer(referer);
+            responseContext.getHeaders().add(ACCESS_CONTROL_ALLOW_ORIGIN, allowedDomain);
+            responseContext.getHeaders().add(ACCESS_CONTROL_ALLOW_CREDENTIALS, "true");
+            logger.debug("✓ CORS: {} (Referer autorisé, Origin absent)", referer);
+            return;
+        }
+
+        // Aucun header valide
+        logger.warn("CORS: Origin/Referer NON autorisés - Origin: {} | Referer: {}", origin, referer);
+        setForbiddenResponse(responseContext,
+                String.format("{\"error\": \"CORS policy: Origin '%s' or Referer '%s' not allowed\"}",
+                        origin, referer));
+    }
+
+    private boolean isRefererAllowed(String referer) {
+        if (referer == null || referer.isEmpty()) {
+            return false;
+        }
+
+        try {
+            String allowedDomain = ConfigProperties.getInstance().getProperty(CONFIG_KEY_ALLOWED_DOMAIN);
+
+            if (isDomainConfigurationInvalid(allowedDomain)) {
+                logger.error("ATTENTION: {} n'est pas configuré!", CONFIG_KEY_ALLOWED_DOMAIN);
+                return false;
+            }
+
+            String[] domains = allowedDomain.split(",");
+            for (String domain : domains) {
+                String trimmedDomain = domain.trim();
+
+                // Vérifier si le Referer commence par le domaine autorisé
+                if (referer.startsWith(trimmedDomain)) {
+                    logger.debug("Referer match trouvé: {} commence par {}", referer, trimmedDomain);
+                    return true;
+                }
+
+                // Support des localhost
+                if (isLocalhostDomain(trimmedDomain) && referer.contains("localhost")) {
+                    return true;
+                }
+            }
+
+            logger.debug("Aucun match trouvé pour le Referer: {}", referer);
+            return false;
+        } catch (Exception e) {
+            logger.error("Erreur lors de la vérification du Referer: {}", e.getMessage(), e);
+            return false;
+        }
+    }
+
+    private String extractDomainFromReferer(String referer) {
+        try {
+            // Extraire le domaine depuis l'URL du Referer
+            // Ex: https://vera.sadory.fr/dashboard → https://vera.sadory.fr
+            if (referer.contains("://")) {
+                int schemeEnd = referer.indexOf("://") + 3;
+                int pathStart = referer.indexOf("/", schemeEnd);
+
+                if (pathStart > 0) {
+                    return referer.substring(0, pathStart);
+                } else {
+                    return referer;
+                }
+            }
+            return referer;
+        } catch (Exception e) {
+            logger.warn("Impossible d'extraire le domaine du Referer: {}", referer);
+            return referer;
         }
     }
 
@@ -166,6 +247,9 @@ public class CorsFilter implements ContainerRequestFilter, ContainerResponseFilt
     }
 
     private boolean isOriginAllowed(String origin) {
+        if (origin == null || origin.isEmpty()) {
+            return false;
+        }
         try {
             String allowedDomain = ConfigProperties.getInstance().getProperty(CONFIG_KEY_ALLOWED_DOMAIN);
 
@@ -210,7 +294,7 @@ public class CorsFilter implements ContainerRequestFilter, ContainerResponseFilt
 
     private void logInitialization() {
         logger.info("================================================");
-        logger.info("   CorsFilter INITIALISÉ !");
+        logger.info("   CorsFilter INITIALISÉ avec support Referer !");
         logger.info("================================================");
     }
 }

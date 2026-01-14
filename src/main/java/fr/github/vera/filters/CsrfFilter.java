@@ -24,7 +24,7 @@ import java.util.concurrent.ConcurrentHashMap;
 public class CsrfFilter implements ContainerRequestFilter, ContainerResponseFilter {
 
     private static final Logger logger = LogManager.getLogger(CsrfFilter.class);
-    private static final String CSRF_TOKEN_HEADER = "X-CSRF-Token";
+    private static final String CSRF_TOKEN_HEADER = "x-csrf-token";
     private static final String CSRF_COOKIE_NAME = "XSRF-TOKEN";
     private static final String IS_PUBLIC_PROPERTY = "isPublic";
 

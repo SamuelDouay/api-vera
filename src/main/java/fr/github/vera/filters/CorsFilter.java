@@ -23,7 +23,7 @@ public class CorsFilter implements ContainerRequestFilter, ContainerResponseFilt
     private static final String ALLOWED_HEADERS = "origin, content-type, accept, authorization, x-requested-with, x-csrf-token";
     private static final String ALLOWED_METHODS = "GET, POST, PUT, DELETE, OPTIONS, HEAD, PATCH";
     private static final String MAX_AGE = "3600";
-    private static final String EXPOSED_HEADERS = "x-csrf-token, authorization";
+    private static final String EXPOSED_HEADERS = "authorization";
     private static final String OPTIONS_METHOD = "OPTIONS";
     private static final String ORIGIN_HEADER = "Origin";
     private static final String REFERER_HEADER = "Referer";

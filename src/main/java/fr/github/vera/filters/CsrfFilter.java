@@ -26,6 +26,8 @@ public class CsrfFilter implements ContainerRequestFilter, ContainerResponseFilt
     private static final Logger logger = LogManager.getLogger(CsrfFilter.class);
     private static final String CSRF_TOKEN_HEADER = "x-csrf-token";
     private static final String CSRF_COOKIE_NAME = "XSRF-TOKEN";
+    private static final String CLIENT_TYPE_HEADER = "X-Client-Type";
+    private static final String WEB_CLIENT = "web";
     private static final String IS_PUBLIC_PROPERTY = "isPublic";
 
     // Stockage en mémoire (session utilisateur -> token)
@@ -42,6 +44,11 @@ public class CsrfFilter implements ContainerRequestFilter, ContainerResponseFilt
         }
 
         if (isPublic(requestContext)) {
+            return;
+        }
+
+        if (!isWebClient(requestContext)) {
+            logger.debug("Client non-web détecté - skip CSRF pour: {} {}", method, path);
             return;
         }
 
@@ -72,7 +79,7 @@ public class CsrfFilter implements ContainerRequestFilter, ContainerResponseFilt
         String sessionId = getSessionId(requestContext);
 
         // Pour les requêtes GET, générer un nouveau token si besoin
-        if ("GET".equals(requestContext.getMethod()) && sessionId != null) {
+        if ("GET".equals(requestContext.getMethod()) && sessionId != null && isWebClient(requestContext)) {
             String token = generateToken();
             tokenStore.put(sessionId, token);
             responseContext.getHeaders().add(CSRF_TOKEN_HEADER, token);
@@ -89,6 +96,11 @@ public class CsrfFilter implements ContainerRequestFilter, ContainerResponseFilt
         return Boolean.TRUE.equals(property) || "true".equals(property.toString());
     }
 
+    private boolean isWebClient(ContainerRequestContext requestContext) {
+        String clientType = requestContext.getHeaderString(CLIENT_TYPE_HEADER);
+        return WEB_CLIENT.equalsIgnoreCase(clientType);
+    }
+
     /**
      * Supprime l'ancien cookie XSRF-TOKEN non sécurisé
      */
@@ -98,7 +110,7 @@ public class CsrfFilter implements ContainerRequestFilter, ContainerResponseFilt
                 .path("/")
                 .maxAge(0)  // Expire immédiatement
                 .build();
-        responseContext.getHeaders().add("Set-Cookie", deleteCookie.toString());
+        responseContext.getHeaders().add("Set-Cookie", deleteCookie);
     }
 
     private String getSessionId(ContainerRequestContext request) {
@@ -108,12 +120,9 @@ public class CsrfFilter implements ContainerRequestFilter, ContainerResponseFilt
             return sessionCookie.getValue();
         }
 
-        // Ou depuis le header Authorization si tu utilises JWT
         String authHeader = request.getHeaderString("Authorization");
         if (authHeader != null && authHeader.startsWith("Bearer ")) {
-            // Pour JWT, utiliser le token complet ou un hash
             String jwtToken = authHeader.substring(7);
-            // Hash le JWT pour avoir un ID de session plus court
             return Integer.toHexString(jwtToken.hashCode());
         }
 

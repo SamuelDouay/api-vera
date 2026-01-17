@@ -6,8 +6,6 @@ import jakarta.ws.rs.container.ContainerRequestContext;
 import jakarta.ws.rs.container.ContainerRequestFilter;
 import jakarta.ws.rs.container.ContainerResponseContext;
 import jakarta.ws.rs.container.ContainerResponseFilter;
-import jakarta.ws.rs.core.Cookie;
-import jakarta.ws.rs.core.NewCookie;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.ext.Provider;
 import org.apache.logging.log4j.LogManager;
@@ -24,11 +22,9 @@ import java.util.concurrent.ConcurrentHashMap;
 public class CsrfFilter implements ContainerRequestFilter, ContainerResponseFilter {
 
     private static final Logger logger = LogManager.getLogger(CsrfFilter.class);
-    private static final String CSRF_TOKEN_HEADER = "x-csrf-token";
-    private static final String CSRF_COOKIE_NAME = "XSRF-TOKEN";
+    private static final String CSRF_TOKEN_HEADER = "X-CSRF-Token";
     private static final String CLIENT_TYPE_HEADER = "X-Client-Type";
     private static final String WEB_CLIENT = "web";
-    private static final String IS_PUBLIC_PROPERTY = "isPublic";
 
     // Stockage en mémoire (session utilisateur -> token)
     private static final Map<String, String> tokenStore = new ConcurrentHashMap<>();
@@ -43,12 +39,19 @@ public class CsrfFilter implements ContainerRequestFilter, ContainerResponseFilt
             return;
         }
 
-        if (isPublic(requestContext)) {
+        // Endpoints publics - pas de CSRF
+        if (path.startsWith("auth/login") ||
+                path.startsWith("auth/register") ||
+                path.startsWith("auth/refresh") ||
+                path.startsWith("auth/forgot-password") ||
+                path.startsWith("auth/reset-password") ||
+                path.equals("health")) {
             return;
         }
 
+        // 🔥 Vérifier si c'est un client web
         if (!isWebClient(requestContext)) {
-            logger.debug("Client non-web détecté - skip CSRF pour: {} {}", method, path);
+            logger.debug("Client API (Postman) - skip CSRF pour {} {}", method, path);
             return;
         }
 
@@ -56,7 +59,7 @@ public class CsrfFilter implements ContainerRequestFilter, ContainerResponseFilt
         String sessionId = getSessionId(requestContext);
         if (sessionId == null) {
             logger.warn("Session non trouvée pour la requête CSRF");
-            return; // Laisser le filtre d'auth gérer
+            return;
         }
 
         // Vérifier le token CSRF
@@ -76,24 +79,18 @@ public class CsrfFilter implements ContainerRequestFilter, ContainerResponseFilt
     @Override
     public void filter(ContainerRequestContext requestContext,
                        ContainerResponseContext responseContext) throws IOException {
-        String sessionId = getSessionId(requestContext);
 
-        // Pour les requêtes GET, générer un nouveau token si besoin
-        if ("GET".equals(requestContext.getMethod()) && sessionId != null && isWebClient(requestContext)) {
-            String token = generateToken();
-            tokenStore.put(sessionId, token);
-            responseContext.getHeaders().add(CSRF_TOKEN_HEADER, token);
-            responseContext.getHeaders().add("Access-Control-Expose-Headers", CSRF_TOKEN_HEADER);
-            clearInsecureCookie(responseContext);
+        // 🔥 Générer token CSRF SEULEMENT pour les clients web
+        if ("GET".equals(requestContext.getMethod()) && isWebClient(requestContext)) {
+            String sessionId = getSessionId(requestContext);
+            if (sessionId != null) {
+                String token = generateToken();
+                tokenStore.put(sessionId, token);
+                responseContext.getHeaders().add(CSRF_TOKEN_HEADER, token);
+                responseContext.getHeaders().add("Access-Control-Expose-Headers", CSRF_TOKEN_HEADER);
+                logger.debug("Token CSRF généré pour client web");
+            }
         }
-    }
-
-    public boolean isPublic(ContainerRequestContext requestContext) {
-        Object property = requestContext.getProperty(IS_PUBLIC_PROPERTY);
-        if (property == null) {
-            return false;
-        }
-        return Boolean.TRUE.equals(property) || "true".equals(property.toString());
     }
 
     private boolean isWebClient(ContainerRequestContext requestContext) {
@@ -101,31 +98,13 @@ public class CsrfFilter implements ContainerRequestFilter, ContainerResponseFilt
         return WEB_CLIENT.equalsIgnoreCase(clientType);
     }
 
-    /**
-     * Supprime l'ancien cookie XSRF-TOKEN non sécurisé
-     */
-    private void clearInsecureCookie(ContainerResponseContext responseContext) {
-        NewCookie deleteCookie = new NewCookie.Builder(CSRF_COOKIE_NAME)
-                .value("")
-                .path("/")
-                .maxAge(0)  // Expire immédiatement
-                .build();
-        responseContext.getHeaders().add("Set-Cookie", deleteCookie);
-    }
-
     private String getSessionId(ContainerRequestContext request) {
-        // Récupérer l'ID de session depuis le cookie ou header
-        Cookie sessionCookie = request.getCookies().get("JSESSIONID");
-        if (sessionCookie != null) {
-            return sessionCookie.getValue();
-        }
-
+        // Utiliser le token JWT comme session ID
         String authHeader = request.getHeaderString("Authorization");
         if (authHeader != null && authHeader.startsWith("Bearer ")) {
             String jwtToken = authHeader.substring(7);
             return Integer.toHexString(jwtToken.hashCode());
         }
-
         return null;
     }
 

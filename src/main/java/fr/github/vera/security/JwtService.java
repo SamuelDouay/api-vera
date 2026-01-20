@@ -45,6 +45,24 @@ public class JwtService {
                 .compact();
     }
 
+    public Date getExpiration(String token) {
+        try {
+            Claims claims = this.validateToken(token);
+            return claims.getExpiration();
+        } catch (Exception e) {
+            return new Date(System.currentTimeMillis() + 3600000);
+        }
+    }
+
+    public Integer getUserId(String token) {
+        try {
+            Claims claims = this.validateToken(token);
+            return claims.get("userId", Integer.class);
+        } catch (Exception e) {
+            return null;
+        }
+    }
+
     public Claims validateToken(String token) {
         try {
             return Jwts.parser()

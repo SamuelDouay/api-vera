@@ -23,13 +23,12 @@ public class CookieAuthFilter implements ContainerRequestFilter {
 
     @Override
     public void filter(ContainerRequestContext requestContext) throws IOException {
-        // Si le header Authorization existe déjà, ne rien faire
+
         if (requestContext.getHeaders().containsKey(AUTH_HEADER)) {
             logger.debug("Header Authorization déjà présent - skip CookieAuthFilter");
             return;
         }
 
-        // Vérifier si c'est un client web
         String clientType = requestContext.getHeaderString(CLIENT_TYPE_HEADER);
         boolean isWebClient = WEB_CLIENT.equalsIgnoreCase(clientType);
 
@@ -38,11 +37,9 @@ public class CookieAuthFilter implements ContainerRequestFilter {
             return;
         }
 
-        // Extraire le token du cookie (seulement pour les clients web)
         Cookie authCookie = requestContext.getCookies().get(AUTH_COOKIE_NAME);
 
         if (authCookie != null && authCookie.getValue() != null && !authCookie.getValue().isEmpty()) {
-            // Ajouter le token dans le header Authorization
             requestContext.getHeaders().add(AUTH_HEADER, "Bearer " + authCookie.getValue());
             logger.debug("Token extrait du cookie et ajouté au header");
         } else {

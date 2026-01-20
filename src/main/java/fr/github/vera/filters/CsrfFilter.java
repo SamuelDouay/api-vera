@@ -2,16 +2,15 @@ package fr.github.vera.filters;
 
 import jakarta.annotation.Priority;
 import jakarta.ws.rs.Priorities;
-import jakarta.ws.rs.container.ContainerRequestContext;
-import jakarta.ws.rs.container.ContainerRequestFilter;
-import jakarta.ws.rs.container.ContainerResponseContext;
-import jakarta.ws.rs.container.ContainerResponseFilter;
+import jakarta.ws.rs.container.*;
+import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.ext.Provider;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import java.io.IOException;
+import java.lang.reflect.Method;
 import java.security.SecureRandom;
 import java.util.Base64;
 import java.util.Map;
@@ -25,33 +24,23 @@ public class CsrfFilter implements ContainerRequestFilter, ContainerResponseFilt
     private static final String CSRF_TOKEN_HEADER = "X-CSRF-Token";
     private static final String CLIENT_TYPE_HEADER = "X-Client-Type";
     private static final String WEB_CLIENT = "web";
-
-    // Stockage en mémoire (session utilisateur -> token)
     private static final Map<String, String> tokenStore = new ConcurrentHashMap<>();
+
+
+    @Context
+    private ResourceInfo resourceInfo;
 
     @Override
     public void filter(ContainerRequestContext requestContext) throws IOException {
         String method = requestContext.getMethod();
         String path = requestContext.getUriInfo().getPath();
 
-        // Méthodes sûres : pas besoin de vérifier CSRF
-        if ("GET".equals(method) || "HEAD".equals(method) || "OPTIONS".equals(method)) {
+        if ("GET".equals(method) || "HEAD".equals(method) || "OPTIONS".equals(method) || isPublicEndpoint()) {
             return;
         }
 
-        // Endpoints publics - pas de CSRF
-        if (path.startsWith("auth/login") ||
-                path.startsWith("auth/register") ||
-                path.startsWith("auth/refresh") ||
-                path.startsWith("auth/forgot-password") ||
-                path.startsWith("auth/reset-password") ||
-                path.equals("health")) {
-            return;
-        }
-
-        // 🔥 Vérifier si c'est un client web
         if (!isWebClient(requestContext)) {
-            logger.debug("Client API (Postman) - skip CSRF pour {} {}", method, path);
+            logger.debug("Client API - non web  - skip CSRF pour {} {}", method, path);
             return;
         }
 
@@ -62,7 +51,6 @@ public class CsrfFilter implements ContainerRequestFilter, ContainerResponseFilt
             return;
         }
 
-        // Vérifier le token CSRF
         String csrfToken = requestContext.getHeaderString(CSRF_TOKEN_HEADER);
         String storedToken = tokenStore.get(sessionId);
 
@@ -79,8 +67,6 @@ public class CsrfFilter implements ContainerRequestFilter, ContainerResponseFilt
     @Override
     public void filter(ContainerRequestContext requestContext,
                        ContainerResponseContext responseContext) throws IOException {
-
-        // 🔥 Générer token CSRF SEULEMENT pour les clients web
         if ("GET".equals(requestContext.getMethod()) && isWebClient(requestContext)) {
             String sessionId = getSessionId(requestContext);
             if (sessionId != null) {
@@ -99,7 +85,6 @@ public class CsrfFilter implements ContainerRequestFilter, ContainerResponseFilt
     }
 
     private String getSessionId(ContainerRequestContext request) {
-        // Utiliser le token JWT comme session ID
         String authHeader = request.getHeaderString("Authorization");
         if (authHeader != null && authHeader.startsWith("Bearer ")) {
             String jwtToken = authHeader.substring(7);
@@ -113,5 +98,14 @@ public class CsrfFilter implements ContainerRequestFilter, ContainerResponseFilt
         byte[] bytes = new byte[32];
         random.nextBytes(bytes);
         return Base64.getUrlEncoder().withoutPadding().encodeToString(bytes);
+    }
+
+    private boolean isPublicEndpoint() {
+        Method method = resourceInfo.getResourceMethod();
+        Class<?> resourceClass = resourceInfo.getResourceClass();
+        if (method != null && method.isAnnotationPresent(Public.class)) {
+            return true;
+        }
+        return resourceClass != null && resourceClass.isAnnotationPresent(Public.class);
     }
 }

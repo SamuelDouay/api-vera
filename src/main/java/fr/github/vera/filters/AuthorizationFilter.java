@@ -12,8 +12,6 @@ import jakarta.ws.rs.ext.Provider;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import java.lang.reflect.Method;
-
 @Secured
 @Provider
 @Priority(Priorities.AUTHORIZATION)
@@ -51,23 +49,11 @@ public class AuthorizationFilter implements ContainerRequestFilter {
     }
 
     private Secured getSecuredAnnotation() {
-        // Vérifier d'abord sur la méthode
-        Method method = resourceInfo.getResourceMethod();
-        if (method != null) {
-            Secured methodAnnotation = method.getAnnotation(Secured.class);
-            if (methodAnnotation != null) {
-                return methodAnnotation;
-            }
-        }
+        Secured methodAnnotation = resourceInfo.getResourceMethod()
+                .getAnnotation(Secured.class);
 
-        // Vérifier sur la classe
-        Class<?> resourceClass = resourceInfo.getResourceClass();
-        if (resourceClass != null) {
-            Secured classAnnotation = resourceClass.getAnnotation(Secured.class);
-            if (classAnnotation != null) {
-                return classAnnotation;
-            }
-        }
-        return null;
+        return methodAnnotation != null ? methodAnnotation
+                : resourceInfo.getResourceClass()
+                .getAnnotation(Secured.class);
     }
 }

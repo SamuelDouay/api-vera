@@ -31,7 +31,6 @@ public class JwtAuthFilter implements ContainerRequestFilter {
             return;
         }
 
-        // Extraire le token JWT
         String authHeader = requestContext.getHeaderString(HttpHeaders.AUTHORIZATION);
         if (authHeader == null || !authHeader.startsWith("Bearer ")) {
             abortWithUnauthorized(requestContext, "Token JWT manquant");
@@ -53,10 +52,9 @@ public class JwtAuthFilter implements ContainerRequestFilter {
             Boolean isAdmin = claims.get("isAdmin", Boolean.class);
 
             if (isAdmin == null) {
-                isAdmin = false; // Valeur par défaut si non présent
+                isAdmin = false;
             }
 
-            // Définir le contexte de sécurité
             requestContext.setSecurityContext(createSecurityContext(email, isAdmin));
 
         } catch (Exception e) {
@@ -73,13 +71,9 @@ public class JwtAuthFilter implements ContainerRequestFilter {
     private boolean isPublicEndpoint() {
         Method method = resourceInfo.getResourceMethod();
         Class<?> resourceClass = resourceInfo.getResourceClass();
-
-        // Vérifier l'annotation sur la méthode
         if (method != null && method.isAnnotationPresent(Public.class)) {
             return true;
         }
-
-        // Vérifier l'annotation sur la classe
         return resourceClass != null && resourceClass.isAnnotationPresent(Public.class);
     }
 
@@ -100,7 +94,6 @@ public class JwtAuthFilter implements ContainerRequestFilter {
                 if ("admin".equals(role)) {
                     return isAdmin;
                 }
-                // Pour "user", tous les utilisateurs authentifiés sont considérés comme users
                 return "user".equals(role);
             }
 
